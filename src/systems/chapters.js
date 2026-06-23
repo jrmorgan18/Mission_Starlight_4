@@ -346,54 +346,101 @@ export async function chapterKeystone(game) {
   await closeScene(game, scene);
 }
 
-/** Fit the Keystone pieces together: tap the glowing pieces in number order
- *  (1..5) to build the arch from the bottom up. Wrong taps just bounce. */
+/** Fit the Keystone back together: DRAG each carved fragment into its matching
+ *  socket on the tablet (match by colour + rune). Snaps when dropped close;
+ *  bounces back otherwise. Window-tracked pointers so it works on iPad. */
 function keystonePuzzle() {
   return new Promise((resolve) => {
-    const N = 5;
+    const FRAG = [
+      { glyph: '✦', color: '#e8884a' }, { glyph: '◆', color: '#5cc8e8' }, { glyph: '▲', color: '#8ad06a' },
+      { glyph: '☼', color: '#e8c44a' }, { glyph: '◉', color: '#c98ae0' }, { glyph: '❖', color: '#e87a7a' }
+    ];
+    const COLS = 3, ROWS = 2, CW = 100, CH = 84, PW = CW - 10, PH = CH - 10, OX = 18, OY = 12;
+    const trayY = OY + ROWS * CH + 22;
+
     const screen = document.createElement('div');
     screen.className = 'screen dim';
     screen.style.zIndex = 65;
-    screen.innerHTML = '<div class="ks-title">🗝️ Fit the Keystone pieces together!</div>';
+    screen.innerHTML = '<div class="ks-title">🧩 Drag each piece into its matching socket!</div>';
+    const board = document.createElement('div');
+    board.className = 'ks2-board';
+    screen.appendChild(board);
 
-    const arch = document.createElement('div');
-    arch.className = 'ks-arch';
     const slots = [];
-    for (let i = 0; i < N; i++) {
+    for (let i = 0; i < 6; i++) {
+      const c = i % COLS, r = Math.floor(i / COLS);
       const slot = document.createElement('div');
-      slot.className = 'ks-slot';
-      slot.style.width = `${120 + (N - i) * 26}px`;   // wide base, narrow top
-      arch.appendChild(slot);
-      slots.push(slot);
+      slot.className = 'ks2-slot';
+      slot.style.cssText = `left:${OX + c * CW}px;top:${OY + r * CH}px;width:${PW}px;height:${PH}px;color:${FRAG[i].color};`;
+      slot.textContent = FRAG[i].glyph;
+      board.appendChild(slot);
+      slots.push({ filled: false, cx: OX + c * CW + PW / 2, cy: OY + r * CH + PH / 2 });
     }
-    screen.appendChild(arch);
 
-    const tray = document.createElement('div');
-    tray.className = 'ks-tray';
-    const order = [...Array(N).keys()].map((i) => i + 1).sort(() => Math.random() - 0.5);
-    let next = 1;
-    for (const n of order) {
-      const piece = document.createElement('button');
-      piece.className = 'ks-piece';
-      piece.textContent = n;
-      piece.onclick = () => {
-        if (n === next) {
-          sfx.collect?.();
-          piece.disabled = true;
-          piece.style.visibility = 'hidden';
-          const slot = slots[N - next];          // fill bottom (slot N-1) first
-          slot.classList.add('filled');
-          slot.textContent = n;
-          next++;
-          if (next > N) { sfx.fanfare?.(); setTimeout(() => { screen.remove(); resolve(); }, 500); }
-        } else {
-          sfx.wrong?.();
-          piece.animate([{ transform: 'translateX(-6px)' }, { transform: 'translateX(6px)' }, { transform: 'translateX(0)' }], { duration: 200 });
-        }
-      };
-      tray.appendChild(piece);
+    const pieces = [];
+    let placed = 0;
+    const order = [...Array(6).keys()].sort(() => Math.random() - 0.5);
+    order.forEach((target, pos) => {
+      const f = FRAG[target];
+      const homeX = OX + (pos % COLS) * CW, homeY = trayY + Math.floor(pos / COLS) * CH;
+      const piece = document.createElement('div');
+      piece.className = 'ks2-piece';
+      piece.textContent = f.glyph;
+      piece.style.cssText = `left:${homeX}px;top:${homeY}px;width:${PW}px;height:${PH}px;background:${f.color};`;
+      piece.dataset.target = target;
+      board.appendChild(piece);
+      pieces.push({ el: piece, target, homeX, homeY, locked: false });
+    });
+
+    let drag = null, offX = 0, offY = 0;
+    const rect = () => board.getBoundingClientRect();
+    const onMove = (e) => {
+      if (!drag) return;
+      e.preventDefault();
+      const r = rect();
+      drag.el.style.left = `${e.clientX - r.left - offX}px`;
+      drag.el.style.top = `${e.clientY - r.top - offY}px`;
+    };
+    const place = (obj) => {
+      const slot = slots[obj.target];
+      obj.el.style.left = `${slot.cx - PW / 2}px`;
+      obj.el.style.top = `${slot.cy - PH / 2}px`;
+      obj.locked = true; slot.filled = true;
+      obj.el.classList.add('locked');
+      placed++;
+      if (placed === 6) { cleanup(); sfx.fanfare?.(); setTimeout(() => { screen.remove(); resolve(); }, 550); }
+    };
+    const onUp = () => {
+      if (!drag) return;
+      const obj = drag; drag = null;
+      obj.el.classList.remove('drag');
+      const slot = slots[obj.target];
+      const px = parseFloat(obj.el.style.left) + PW / 2, py = parseFloat(obj.el.style.top) + PH / 2;
+      if (!slot.filled && Math.hypot(px - slot.cx, py - slot.cy) < 56) { sfx.collect?.(); place(obj); }
+      else { obj.el.style.left = `${obj.homeX}px`; obj.el.style.top = `${obj.homeY}px`; sfx.tap?.(); }
+    };
+    for (const obj of pieces) {
+      obj.el.addEventListener('pointerdown', (e) => {
+        if (obj.locked) return;
+        e.preventDefault();
+        drag = obj; obj.el.classList.add('drag');
+        const r = rect();
+        offX = e.clientX - (r.left + parseFloat(obj.el.style.left));
+        offY = e.clientY - (r.top + parseFloat(obj.el.style.top));
+      }, { passive: false });
     }
-    screen.appendChild(tray);
+    window.addEventListener('pointermove', onMove, { passive: false });
+    window.addEventListener('pointerup', onUp);
+    window.addEventListener('pointercancel', onUp);
+    const cleanup = () => {
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+      window.removeEventListener('pointercancel', onUp);
+      window.__ksSolve = undefined;
+    };
+    // test hook: snap every remaining piece home
+    window.__ksSolve = () => { for (const obj of pieces) if (!obj.locked) place(obj); };
+
     document.getElementById('ui').appendChild(screen);
   });
 }
@@ -461,11 +508,12 @@ export async function chapterDawn(game) {
 
   // --- the cliffhanger ---
   await ui.dialogue([
-    { who: 'signal', text: '...kzzt... is anyone... please... kzzt...' },
-    { who: 'bolt', text: 'Cadet — my tracker just lit up RED. That killer beam we saw long ago? It\'s now pointed straight at a small blue world. At EARTH.', stamp: 'real' },
-    { who: 'bolt', text: 'And that broken signal... it\'s coming FROM Earth. Too faint to read. They don\'t know what\'s coming for them.', stamp: 'real' },
-    { who: 'luma', text: 'Earth is unimaginably far. The only way to reach it in time is to fly so fast that TIME ITSELF bends. It\'s never been done...' },
-    { who: 'player', text: 'Then we\'ll be the first. Crew — set course for home. We have a world to warn.' }
+    { who: 'signal', text: '...kzzt... this is Earth... we see something far off in the sky... is anyone out there?... kzzt...' },
+    { who: 'bolt', text: 'Cadet — my tracker just lit up RED. That killer beam from the Pinwheel, the one we saw long ago? After ages crossing space, it\'s finally on a path toward EARTH.', stamp: 'real' },
+    { who: 'bolt', text: 'It won\'t arrive for a long, long time — but it IS coming. And that faint signal is from home. They\'ve spotted it, and they\'re scared.', stamp: 'real' },
+    { who: 'luma', text: 'Earth is just our neighbor — we can zip home and warn everyone quickly. But STOPPING that beam? Its source is unimaginably far across the galaxy.' },
+    { who: 'bolt', text: 'To reach something that far, we\'d have to fly so close to light-speed that time itself would bend. We might return to a changed world...', stamp: 'real' },
+    { who: 'player', text: 'Then first we warn Earth — and then we go the distance to save it. Crew, set course for home!' }
   ]);
   await ui.giveClue('mr6');
   await closeScene(game, scene);
@@ -483,13 +531,13 @@ function toBeContinued() {
     wrap.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:16px;text-align:center;padding:0 22px;';
     const t1 = document.createElement('div');
     t1.style.cssText = 'font-size:clamp(22px,5vw,40px);font-weight:900;color:#ffd95c;text-shadow:0 0 18px rgba(255,217,92,0.6);';
-    t1.textContent = 'The engines blaze. The stars begin to stretch...';
+    t1.textContent = 'Course set for home — and then the long road to save it...';
     const t2 = document.createElement('div');
     t2.style.cssText = 'font-size:clamp(28px,7vw,60px);font-weight:900;letter-spacing:2px;color:#5ce8ff;text-shadow:0 0 24px rgba(92,232,255,0.7);';
     t2.textContent = 'TO BE CONTINUED...';
     const t3 = document.createElement('div');
     t3.className = 'title-sub';
-    t3.textContent = 'Mission: Starlight 5 — racing home to warn the Earth';
+    t3.textContent = 'Mission: Starlight 5 — warn the Earth, then the journey where time bends';
     const btn = document.createElement('button');
     btn.className = 'big-btn';
     btn.textContent = '🌟 You saved a world!';

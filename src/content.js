@@ -19,7 +19,7 @@ export const CLUES = {
   mr3: { id: 'mr3', icon: '🧲', title: 'The Shield That Failed', text: 'Mars lost its magnetic shield. Without it, the solar wind slowly stripped its air and water out into space — and the warm, wet world froze. That is how a planet dies. (REAL SCIENCE.)' },
   mr4: { id: 'mr4', icon: '💧', title: 'Water in the Dark', text: 'Deep in a lava-tube cave we found hidden water ice — and ripples of an ancient streambed. Where there is water, there might once have been LIFE. (REAL SCIENCE.)' },
   mr5: { id: 'mr5', icon: '🗝️', title: 'The Keystone Opens', text: 'By remembering everything we learned — what Mars lost, and what life needs — we powered the ancient Keystone and started the engines that will wake the Red Planet.' },
-  mr6: { id: 'mr6', icon: '🔵', title: 'A Cry from Home', text: 'As Mars turned green, Bolt\'s tracker screamed: the old gamma-ray beam is now bearing on EARTH — and a faint, broken signal is coming FROM home. There is only one way to get there in time: fly so fast that time itself bends.' }
+  mr6: { id: 'mr6', icon: '🔵', title: 'A Cry from Home', text: 'As Mars turned green, Bolt\'s tracker screamed: the old gamma-ray beam is finally on a path toward EARTH, far in the future — and a frightened signal is calling from home. Earth is close, so the warning is easy. But STOPPING the beam means journeying so far and so fast that time itself will bend.' }
 };
 
 export const CARDS = [

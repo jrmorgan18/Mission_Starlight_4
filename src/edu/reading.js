@@ -44,11 +44,11 @@ export const READING_BANK = [
   },
   {
     id: 'dawn-letter', chapter: 'dawn', title: 'A New Dawn — and a Warning',
-    text: 'Dear Cadet, look what we did together! The engines are warming Mars. The ice is melting into the first new rivers, the air is growing thick enough to breathe, and tiny green plants are opening along the old shores. The Solari are home. But Bolt\'s tracker is flashing red. That old killer beam, the one we saw long ago, is now pointed at a small blue world — EARTH. And a broken little signal is coming from there, too faint to read. We cannot fly there the normal way; it is too far. We will have to go so fast that time itself bends. Hold on tight. — Luma',
+    text: 'Dear Cadet, look what we did together! The engines are warming Mars. The ice is melting into the first new rivers, the air is growing thick enough to breathe, and tiny green plants are opening along the old shores. The Solari are home. But Bolt\'s tracker is flashing red. That old killer beam, the one we saw long ago, is finally on a path toward a small blue world — EARTH. It will not arrive for ages, but it is coming, and a frightened signal is calling from home. Earth is just next door, so we can carry the warning there quickly. Stopping the beam, though, means a journey so far and so fast that time itself will bend. Hold on tight. — Luma',
     questions: [
       rq('dawn-q1', 'What is happening to Mars now?', ['It is warming, with new rivers, air, and green plants', 'It is freezing solid', 'It is breaking apart'], 'It is warming, with new rivers, air, and green plants', 'The letter says the engines are warming Mars, the ice is melting, and "tiny green plants are opening."'),
-      rq('dawn-q2', 'What is the killer beam now pointed at?', ['Earth, a small blue world', 'The Moon', 'Another star'], 'Earth, a small blue world', 'Luma writes the beam "is now pointed at a small blue world — EARTH."'),
-      rq('dawn-q3', 'How will they reach Earth in time?', ['Fly so fast that time itself bends', 'Walk', 'Wait for it to come closer'], 'Fly so fast that time itself bends', 'The letter says: "We will have to go so fast that time itself bends." (That\'s a hint about the next adventure!)')
+      rq('dawn-q2', 'What is the killer beam now on a path toward?', ['Earth, a small blue world', 'The Moon', 'Another star'], 'Earth, a small blue world', 'Luma writes the beam "is finally on a path toward a small blue world — EARTH."'),
+      rq('dawn-q3', 'Why is WARNING Earth easy, but STOPPING the beam hard?', ['Earth is next door, but the beam\'s source is very far away', 'Earth is far, but the beam is close', 'Both are right next to Mars'], 'Earth is next door, but the beam\'s source is very far away', 'Earth is Mars\'s neighbor, so the warning is quick. But the beam comes from far across the galaxy — reaching that takes a journey so fast that time itself bends!')
     ]
   }
 ];
