@@ -1,0 +1,15 @@
+{
+  "name": "Mission: Starlight 3 — Race the Dying Star",
+  "short_name": "Starlight 3",
+  "description": "Race across the galaxy to save the Solari from the Pinwheel, a giant star about to die in a gamma-ray burst.",
+  "start_url": ".",
+  "display": "fullscreen",
+  "orientation": "landscape",
+  "background_color": "#070514",
+  "theme_color": "#070514",
+  "icons": [
+    { "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
