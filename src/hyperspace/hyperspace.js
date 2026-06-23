@@ -332,8 +332,7 @@ export class HyperspaceScene {
       }
       if (!this.exiting && photon.position.distanceTo(this.ship.position) < 2.4) {
         sfx.collect();
-        ui.addStarBits(1);
-        ui.toast('⭐ +1 Photon!');
+        ui.addStarBits(1);   // HUD star pill pulses; no screen-blocking toast
         photon.position.z = -300 - Math.random() * 50;
       }
     }

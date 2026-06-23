@@ -141,6 +141,12 @@ button { font-family: var(--font); cursor: pointer; border: none; }
   font-weight: 800;
   min-height: 42px;
 }
+.hud-pill.pulse { animation: pillpulse 0.34s ease-out; }
+@keyframes pillpulse {
+  0%   { transform: scale(1); }
+  35%  { transform: scale(1.22); border-color: var(--glow-gold); box-shadow: 0 0 16px rgba(255,217,92,0.7); }
+  100% { transform: scale(1); }
+}
 .hud-btn {
   background: var(--panel);
   border: 2px solid var(--panel-border);

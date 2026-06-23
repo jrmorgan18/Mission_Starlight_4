@@ -17,12 +17,13 @@ const DEFAULT_PRIZES = [
 
 // Suit upgrades the cadet can buy with ⭐ stars. Effects are gentle helpers,
 // never required to finish. headlamp/grip change the cave; scanner the mystery.
+// Costs are tuned for the extra stars now earned on the flight + rover drives.
 export const SUIT_UPGRADES = [
-  { id: 'headlamp', icon: '🔦', name: 'Bright Headlamp', cost: 4, desc: 'Light up dark caves much farther.' },
-  { id: 'grip',     icon: '🥾', name: 'Grip Boots',      cost: 4, desc: 'Walk faster across Mars.' },
-  { id: 'oxygen',   icon: '🫧', name: 'Big Oxygen Tank', cost: 5, desc: 'Explore longer without a worry.' },
-  { id: 'scanner',  icon: '🔎', name: 'Scanner Visor',   cost: 6, desc: 'Spot hidden clues and samples.' },
-  { id: 'color',    icon: '🎨', name: 'Crimson Paint',   cost: 3, desc: 'Repaint your suit Mars-red — just for style!' }
+  { id: 'color',    icon: '🎨', name: 'Crimson Paint',   cost: 8,  desc: 'Repaint your suit Mars-red — just for style!' },
+  { id: 'headlamp', icon: '🔦', name: 'Bright Headlamp', cost: 12, desc: 'Light up dark caves much farther.' },
+  { id: 'grip',     icon: '🥾', name: 'Grip Boots',      cost: 12, desc: 'Walk faster across Mars.' },
+  { id: 'oxygen',   icon: '🫧', name: 'Big Oxygen Tank', cost: 16, desc: 'Explore longer without a worry.' },
+  { id: 'scanner',  icon: '🔎', name: 'Scanner Visor',   cost: 20, desc: 'Spot hidden clues and samples.' }
 ];
 
 function defaultSave() {

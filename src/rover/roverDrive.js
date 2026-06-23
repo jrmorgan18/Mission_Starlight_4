@@ -168,7 +168,7 @@ export class RoverDriveScene {
       g.rotation.y += dt * 3;
       if (g.position.z > 12) { g.position.z = -120 - Math.random() * 30; g.position.x = (Math.random() * 2 - 1) * BOUNDS; }
       if (Math.abs(g.position.z) < 2.2 && Math.abs(g.position.x - this.rover.position.x) < 1.8) {
-        sfx.collect?.(); ui.addStarBits(1); ui.toast('⭐ +1 star!'); g.position.z = -120 - Math.random() * 30;
+        sfx.collect?.(); ui.addStarBits(1); g.position.z = -120 - Math.random() * 30;   // HUD pulses; no screen-blocking toast
       }
     }
 

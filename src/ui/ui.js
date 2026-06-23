@@ -606,4 +606,11 @@ export function addStarBits(n) {
   s.starBits += n;
   save();
   refreshHUD();
+  // quick HUD pulse instead of a screen-blocking toast (used during driving/flight)
+  if (hudEls?.bits?.parentElement) {
+    const pill = hudEls.bits.parentElement;
+    pill.classList.remove('pulse');
+    void pill.offsetWidth;        // restart the animation
+    pill.classList.add('pulse');
+  }
 }
