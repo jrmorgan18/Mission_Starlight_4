@@ -7,6 +7,7 @@ import { speak, stopSpeaking } from '../speech.js';
 import { sfx } from '../audio.js';
 import { CARDS, CLUES } from '../content.js';
 import { SCIENCE_BANK } from '../edu/science.js';
+import { openSuitLab } from './suit.js';
 
 const root = () => document.getElementById('ui');
 
@@ -25,6 +26,8 @@ export const SPEAKERS = {
   pip:    { name: 'Pip', face: '🐚' },
   astra:  { name: 'Astra', face: '🔭' },
   vega:   { name: 'Captain Vega', face: '🚀' },
+  rusty:  { name: 'Rusty', face: '🤖' },
+  keystone: { name: 'The Keystone', face: '🗝️' },
   glyphs: { name: 'Ancient Glyphs', face: '📜' },
   radio:  { name: 'Ship Radio', face: '📻' },
   signal: { name: 'The Signal', face: '📡' }
@@ -55,7 +58,8 @@ export function buildHUD(game) {
 
   const left = el('div', 'hud-group');
   const beacons = el('div', 'hud-pill');
-  beacons.append('🛡️', el('span', '', '0'));
+  beacons.append('🪨', el('span', '', '0'));   // Mars samples collected
+  beacons.title = 'Mars samples collected';
   const bits = el('div', 'hud-pill');
   bits.append('⭐', el('span', '', '0'));
   // "Oops meter": this many wrong answers anywhere in the game bounce the player back one planet.
@@ -66,6 +70,9 @@ export function buildHUD(game) {
   left.append(beacons, bits, strikes);
 
   const right = el('div', 'hud-group');
+  const suitBtn = el('button', 'hud-btn', '🧰');
+  suitBtn.title = 'Suit Lab — spend your stars on upgrades';
+  suitBtn.onclick = () => { sfx.open(); openSuitLab(() => refreshHUD()); };
   const journalBtn = el('button', 'hud-btn', '📔');
   journalBtn.title = 'Star Journal';
   journalBtn.onclick = () => { sfx.open(); showJournal(); };
@@ -76,7 +83,7 @@ export function buildHUD(game) {
   gear.addEventListener('pointerdown', startHold);
   gear.addEventListener('pointerup', cancelHold);
   gear.addEventListener('pointerleave', cancelHold);
-  right.append(journalBtn, gear);
+  right.append(suitBtn, journalBtn, gear);
 
   hud.append(left, right);
   root().appendChild(hud);
@@ -100,7 +107,7 @@ export function buildHUD(game) {
 export function refreshHUD() {
   if (!hudEls) return;
   const s = loadSave();
-  hudEls.beacons.textContent = String(s.beacons);
+  hudEls.beacons.textContent = String(s.samples || 0);
   hudEls.bits.textContent = String(s.starBits);
   // rebuild the dot row if the parent changed the oops limit
   const limit = oopsLimit();
@@ -512,8 +519,8 @@ export function titleScreen(hasSave, greeting = null) {
     const screen = el('div', 'screen');
     screen.style.justifyContent = 'center';
     const logo = el('div', 'title-logo');
-    logo.append('MISSION:', document.createElement('br'), 'STARLIGHT 3');
-    const sub = el('div', 'title-sub', 'Race the Dying Star');
+    logo.append('MISSION:', document.createElement('br'), 'STARLIGHT 4');
+    const sub = el('div', 'title-sub', 'Waking the Red Planet');
     const play = el('button', 'big-btn', hasSave ? '▶ CONTINUE' : '▶ START MISSION');
     play.onclick = () => { sfx.fanfare(); screen.remove(); resolve('play'); };
     screen.append(logo, sub);
@@ -524,7 +531,7 @@ export function titleScreen(hasSave, greeting = null) {
       fresh.onclick = () => { sfx.tap(); screen.remove(); resolve('new'); };
       screen.append(fresh);
     }
-    screen.appendChild(el('div', 'small-note', 'Across the galaxy, a dying star — and a world to save'));
+    screen.appendChild(el('div', 'small-note', 'A dead red world — and the secret to waking it'));
     root().appendChild(screen);
   });
 }
@@ -577,13 +584,15 @@ export function giveClue(clueId) {
   return rewardBurst(c.icon, `Mystery Clue: ${c.title}`, c.text + '\n(Pinned in your Star Journal 🕵️)');
 }
 
-export function giveBeacon(placeName) {
+/** Collect a Mars sample (+1 HUD rock, +stars to spend in the Suit Lab). */
+export function giveSample(what, starReward = 2) {
   const s = loadSave();
-  s.beacons++;
+  s.samples = (s.samples || 0) + 1;
+  s.starBits += starReward;
   save();
   refreshHUD();
   sfx.shard();
-  return rewardBurst('🛡️', `Deflector shield ${s.beacons} online!`, `Another shield is charged and ready. Set up at ${placeName}.`);
+  return rewardBurst('🪨', `Sample collected: ${what}!`, `That's ${s.samples} Mars sample${s.samples > 1 ? 's' : ''}. Earned ⭐${starReward} — spend them in the Suit Lab! 🧰`);
 }
 
 export function countJump() {

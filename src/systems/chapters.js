@@ -1,16 +1,17 @@
-// The six chapters of Mission: Starlight 3 — "Race the Dying Star". Each is an
+// The six chapters of Mission: Starlight 4 — "Waking the Red Planet". Each is an
 // async storybook script: build the diorama, talk, explore, sneak in the
-// learning, raise a shield. Dialogue lines can carry stamp:'real'|'magic' —
-// Bolt's fact-checker marks REAL SCIENCE vs STORY MAGIC.
+// learning. Dialogue lines can carry stamp:'real'|'magic' — Bolt's fact-checker
+// marks REAL SCIENCE vs STORY MAGIC.
 import * as THREE from 'three';
 import { WorldScene } from './worldScene.js';
-import { collectParts, echoBlinks, beaconPickup, animate } from './minigames.js';
-import { KillerStarScene, pinwheelClimax } from './sliceScene.js';
-import { HyperspaceScene } from '../hyperspace/hyperspace.js';
-import { makeAlien, makeLuma, makeRock, makeCrystal, makeLighthouse, makeShip, makeGlowSprite, makeBeacon } from '../world/builders.js';
+import { collectParts, animate } from './minigames.js';
+import { CaveScene } from '../cave/caveScene.js';
+import { TerraformScene, makeSolarWind } from '../mars/showpieces.js';
+import { makeAlien, makeLuma, makeRover, makeRock, makeCrystal, makeShip, makeGlowSprite, makePlanet } from '../world/builders.js';
 import * as ui from '../ui/ui.js';
 import { pickMath, pickScience, pickReading } from '../edu/engine.js';
 import { loadSave } from '../save.js';
+import { sfx } from '../audio.js';
 
 /* ---------- shared bits ---------- */
 
@@ -24,8 +25,7 @@ async function askMath(skill, opts = {}) {
 
 async function askReadingSet(chapterTag, howMany, opts = {}) {
   const set = pickReading(chapterTag);
-  const qs = set.questions.slice(0, howMany);
-  for (const q of qs) {
+  for (const q of set.questions.slice(0, howMany)) {
     await ui.askQuestion(q, { contextLabel: opts.label || 'READ CAREFULLY', icon: '📖' });
   }
 }
@@ -38,14 +38,15 @@ function scatter(scene, makeFn, n, spread = 18) {
   }
 }
 
-/** A bright "second sun" sprite hanging in a diorama's sky — the looming Pinwheel. */
-function addPinwheelSky(scene, color = 0xbfe8ff, size = 10, pos = [12, 19, -38]) {
-  const glow = makeGlowSprite(color, size);
-  glow.position.set(...pos);
-  scene.scene.add(glow);
-  const core = makeGlowSprite(0xffffff, size * 0.4);
-  core.position.set(...pos);
-  scene.scene.add(core);
+/** A big distant mountain (Olympus Mons) on the horizon. */
+function addMountain(scene, x, z, h = 12) {
+  const m = new THREE.Mesh(
+    new THREE.ConeGeometry(h * 1.3, h, 6),
+    new THREE.MeshStandardMaterial({ color: 0x7a3a22, roughness: 1, flatShading: true })
+  );
+  m.position.set(x, h / 2 - 2, z);
+  scene.scene.add(m);
+  return m;
 }
 
 function addLuma(scene, x, y, z) {
@@ -68,279 +69,344 @@ async function closeScene(game, scene) {
 }
 
 /* ============================================================
-   CHAPTER 1 — ARRIVAL AT VEYRA
+   CHAPTER 1 — THE RED WELCOME
 ============================================================ */
-export async function chapterVeyra(game) {
+export async function chapterWelcome(game) {
   const s = loadSave();
-  const scene = await openScene(game, 'veyra');
-  addPinwheelSky(scene, 0xbfe8ff, 11, [-16, 20, -40]);
-  scatter(scene, () => makeRock(0.4 + Math.random() * 1.0, 0xff8a5a), 8, 16);   // coral lumps
+  const scene = await openScene(game, 'marsred');
+  addMountain(scene, -22, -34, 16);            // Olympus Mons on the horizon
+  scatter(scene, () => makeRock(0.5 + Math.random() * 1.2, 0x8a4028), 10, 18);
   addLuma(scene, 7, 3.4, 3);
 
+  const rusty = makeRover();
+  scene.place(rusty, -3, -3, { id: 'rusty', ry: 0.4 });
   const sola = makeAlien('solari');
-  scene.place(sola, -4, -2, { id: 'sola', ry: 0.5 });
+  scene.place(sola, 5, 0, { id: 'sola', ry: -0.5 });
   const pip = makeAlien('solari');
   pip.scale.setScalar(0.7);
-  scene.place(pip, 5, 0, { id: 'pip', ry: -0.5 });
+  scene.place(pip, 8, 3, { ry: -0.6 });
 
   await ui.dialogue([
-    { who: 'bolt', text: `Cadet ${s.name}, we followed the distress call all the way to Veyra — an ocean world with TWO suns in its sky.` },
-    { who: 'bolt', text: 'That dazzling one isn\'t their sun. It\'s the Pinwheel: a Wolf-Rayet star, the biggest, hottest kind there is — and it\'s almost out of fuel.', stamp: 'real' },
-    { who: 'luma', text: 'The little folk down there are waving at us! Let\'s go say hello, Cadet.' }
+    { who: 'bolt', text: `Cadet ${s.name}, we did it — we brought the Solari to their new home. This is MARS, the Red Planet.`, stamp: 'real' },
+    { who: 'sola', text: 'But sky-friend... it is so cold and quiet. This world looks fast asleep. Can our people really live here?' },
+    { who: 'bolt', text: 'Red from rusty iron dust, with the biggest volcano AND deepest canyon in the whole solar system. A mighty world — but yes, right now, a sleeping one.', stamp: 'real' }
   ]);
-  await ui.giveCard('veyra');
-
-  ui.setObjective('Tap Elder Sola to say hello');
-  await scene.waitInteract('sola');
-  await ui.dialogue([
-    { who: 'sola', text: 'Welcome, sky-traveler. I am Sola, eldest of the Solari. For all my long life the Pinwheel has lit our nights...' },
-    { who: 'sola', text: '...but now it spins faster every evening, and shivers in the dark. We are afraid, and we do not know why. Will you help us read its secrets?' },
-    { who: 'player', text: 'That\'s exactly why we came. We\'ll figure it out together!' }
-  ]);
+  await ui.giveCard('mars');
   await ui.giveCard('sola');
 
-  await askReadingSet('veyra', 2);
-
-  ui.setObjective('Tap Pip the young Solari');
-  await scene.waitInteract('pip');
+  ui.setObjective('Tap the lonely little rover');
+  await scene.waitInteract('rusty');
   await ui.dialogue([
-    { who: 'pip', text: 'Hi hi! I\'m Pip! My singing shells washed all over the shore. Help me find them and I\'ll show you everything!' }
+    { who: 'rusty', text: 'A ship! Real visitors! Oh, hello, hello! I am Rusty. I have rolled across Mars all alone for... oh, I lost count of the years.' },
+    { who: 'rusty', text: 'I know every rock and crater. I will help you, friends — I have waited SO long for friends. Where shall we begin?' },
+    { who: 'player', text: 'Together, Rusty. Let\'s figure out how to wake your planet up.' }
   ]);
-  await ui.giveCard('pip');
+  await ui.giveCard('rusty');
 
-  const shellIds = ['shell1', 'shell2', 'shell3'];
-  shellIds.forEach((id, i) => {
-    const shell = makeCrystal(0xff9a6a, 1.1);
-    scene.place(shell, -9 + i * 9, -6 - (i % 2) * 3, { id });
+  await askReadingSet('welcome', 2);
+  await askScience('mars');
+
+  // first sample — teaches the Suit Lab loop
+  await ui.giveSample('a rusty red Mars rock', 3);
+  await ui.dialogue([
+    { who: 'bolt', text: 'Nice find! Samples earn ⭐ stars. Tap the Suit Lab 🧰 up top any time to trade stars for gear — a brighter headlamp helps in caves!' }
+  ]);
+
+  await ui.giveClue('mr1');
+  game.checkBadges();
+  await ui.dialogue([
+    { who: 'rusty', text: 'If you want to know what happened here, come see the ghost rivers. Follow me — beep beep!' }
+  ]);
+  await closeScene(game, scene);
+}
+
+/* ============================================================
+   CHAPTER 2 — THE GHOST RIVERS
+============================================================ */
+export async function chapterRivers(game) {
+  const scene = await openScene(game, 'marscanyon');
+  addMountain(scene, 20, -36, 13);
+  // dry, winding riverbed of pale stones
+  for (let i = 0; i < 16; i++) {
+    const r = makeRock(0.4 + Math.random() * 0.7, 0xc89a6a);
+    r.position.set(-18 + i * 2.4 + Math.sin(i) * 2, 0.2, -6 + Math.cos(i * 0.8) * 6);
+    scene.scene.add(r);
+  }
+  const rusty = makeRover();
+  scene.place(rusty, -4, -2, { id: 'rusty', ry: 0.5 });
+
+  await ui.dialogue([
+    { who: 'rusty', text: 'See this winding ditch? It was a RIVER once. Long ago Mars was warm and wet — rain, rivers, lakes, maybe even an ocean!', stamp: 'real' },
+    { who: 'bolt', text: 'The water is gone now, but the shapes it carved are still here. If we read the ghost rivers, they\'ll tell us what happened.', stamp: 'real' }
+  ]);
+
+  await askReadingSet('rivers', 2);
+
+  // collect ancient river stones (samples)
+  const stoneIds = ['rs1', 'rs2', 'rs3'];
+  stoneIds.forEach((id, i) => {
+    const stone = makeCrystal(0xbfd0ff, 1.0);
+    scene.place(stone, -10 + i * 9, -6 - (i % 2) * 3, { id });
   });
-  await collectParts(scene, shellIds, "Gather Pip's singing shells");
+  await collectParts(scene, stoneIds, 'Gather smooth river stones');
+  await ui.giveSample('smooth water-worn river stones', 3);
 
+  await askScience('mars');
+  await askMath('subtraction', { label: 'RIVER SURVEY', icon: '📏' });
+
+  await ui.giveClue('mr2');
+  game.checkBadges();
   await ui.dialogue([
-    { who: 'bolt', text: 'Beep — databank question, Cadet. Let\'s make sure we understand what we\'re dealing with.' }
-  ]);
-  await askScience('killerstar');
-
-  await ui.giveClue('ks1');
-  await ui.dialogue([
-    { who: 'sola', text: 'Our sky-watchers live on the little moon above. Astra keeps the great telescope there. She can show you the Pinwheel up close.' },
-    { who: 'bolt', text: 'Then that\'s our next jump. Buckle up, Cadet — to the sky-watch tower!' }
-  ]);
-  await closeScene(game, scene);
-}
-
-/* ============================================================
-   CHAPTER 2 — THE SKY-WATCHERS (observatory)
-============================================================ */
-export async function chapterObservatory(game) {
-  const scene = await openScene(game, 'observatory');
-  addPinwheelSky(scene, 0xcfeaff, 11, [13, 18, -36]);
-
-  const tower = makeLighthouse(6);
-  scene.place(tower, 0, -9, { id: 'tower' });
-  const astra = makeAlien('solari');
-  astra.scale.setScalar(1.05);
-  scene.place(astra, -5, -1, { id: 'astra', ry: 0.4 });
-
-  await ui.dialogue([
-    { who: 'bolt', text: 'The sky-watch moon! That tall tower is the great telescope. Let\'s find Astra.' }
-  ]);
-  ui.setObjective('Tap Astra the sky-watcher');
-  await scene.waitInteract('astra');
-  await ui.dialogue([
-    { who: 'astra', text: 'You came! Good. Look through the scope — see how the Pinwheel flings out two glowing arms of dust as it spins?' },
-    { who: 'astra', text: 'A spinning star this big can die in a GAMMA-RAY BURST — a beam of deadly light. The question that keeps me awake is not WHEN. It is WHERE it points.', stamp: 'real' },
-    { who: 'bolt', text: 'Smart watcher. A burst only burns what it\'s aimed at. Let\'s measure that spin first.' }
-  ]);
-  await ui.giveCard('astra');
-  await ui.giveCard('pinwheel');
-
-  await askReadingSet('observatory', 2);
-
-  await ui.dialogue([
-    { who: 'astra', text: 'The tower will flash the Pinwheel\'s spin-beat. Count the flashes, then echo them back on the drum!' }
-  ]);
-  await echoBlinks(scene, tower, [3, 4, 5]);
-
-  await ui.giveClue('ks2');
-  await askScience('killerstar');
-  await askScience('killerstar');
-
-  await ui.giveBeacon('the sky-watch tower');
-  await ui.dialogue([
-    { who: 'astra', text: 'Now you must see it up close to chart where the beam will point. Fly carefully, Cadet. That star bites.' }
+    { who: 'rusty', text: 'So Mars HAD water. The big question is... where did it all go? Rusty knows who can explain — to the icy poles!' }
   ]);
   await closeScene(game, scene);
 }
 
 /* ============================================================
-   CHAPTER 3 — THE PINWHEEL (the showpiece)
+   CHAPTER 3 — WHY A PLANET DIES (solar wind + magnetic shield)
 ============================================================ */
-export async function chapterPinwheel(game) {
-  const scene = new KillerStarScene(game, { showFps: false });
+export async function chapterDeath(game) {
+  const scene = await openScene(game, 'marspolar');
+  scatter(scene, () => makeRock(0.4 + Math.random() * 0.8, 0xb8b0d0), 8, 16);   // frosty rocks
+
+  // Mars hangs in the sky with the solar wind streaming at it
+  const wind = makeSolarWind(game.lowDetail ? 90 : 170);
+  wind.position.set(0, 14, -28);
+  scene.scene.add(wind);
+  const skyMars = makePlanet('marsred', 2.6);
+  skyMars.position.copy(wind.position);
+  scene.scene.add(skyMars);
+
+  const rusty = makeRover();
+  scene.place(rusty, -4, -2, { id: 'rusty', ry: 0.5 });
+
+  await ui.dialogue([
+    { who: 'bolt', text: 'Here\'s the sad secret, Cadet. Look up — those gold streaks are the SOLAR WIND, tiny particles blasting out from the Sun.', stamp: 'real' },
+    { who: 'bolt', text: 'Long ago Mars had a magnetic SHIELD that blocked the wind. But Mars is small; its iron heart cooled, the shield faded — and the wind stripped its air and water away.', stamp: 'real' }
+  ]);
+
+  await askReadingSet('death', 2);
+
+  // raise-the-shield moment
+  await ui.dialogue([
+    { who: 'rusty', text: 'I kept a spare shield bubble! Quick — tap to RAISE THE SHIELD and watch what it does to the wind!' }
+  ]);
+  await raiseShieldMoment(wind);
+  await ui.dialogue([
+    { who: 'bolt', text: 'See? With a shield, the wind slides right around. Without one... poor Mars lost everything. Earth still has its shield — that\'s why WE\'RE safe.', stamp: 'real' }
+  ]);
+
+  await askScience('mars');
+  await askScience('mars');
+
+  await ui.giveSample('a frost-covered polar rock', 2);
+  await ui.giveClue('mr3');
+  game.checkBadges();
+  await ui.dialogue([
+    { who: 'rusty', text: 'But here\'s hope: not all the water left. Some hid deep underground, in the caves. Dare to go down with me?' }
+  ]);
+  await closeScene(game, scene);
+}
+
+/** Show a RAISE THE SHIELD button; on tap the wind deflects around the bubble. */
+function raiseShieldMoment(wind) {
+  return new Promise((resolve) => {
+    const wrap = document.createElement('div');
+    wrap.style.cssText = 'position:absolute;left:50%;bottom:24%;transform:translateX(-50%);z-index:40;';
+    const btn = document.createElement('button');
+    btn.className = 'big-btn cyan';
+    btn.textContent = '🧲 RAISE THE SHIELD!';
+    wrap.appendChild(btn);
+    document.getElementById('ui').appendChild(wrap);
+    btn.onclick = () => {
+      wind.userData.setShield(true);
+      sfx.shard?.();
+      ui.toast('🛡️ Shield up — the solar wind bends away!', true);
+      btn.disabled = true;
+      setTimeout(() => { wrap.remove(); resolve(); }, 2200);
+    };
+  });
+}
+
+/* ============================================================
+   CHAPTER 4 — INTO THE CAVES (first-person)
+============================================================ */
+export async function chapterCaves(game) {
+  const scene = new CaveScene(game, { showFps: false });
   game.setScene(scene);
-  game.pipeline.setBloom(1.15, 0.7, 0.62);   // crank the glow for the showpiece
+  game.pipeline.setBloom(0.7, 0.55, 0.5);
   await ui.fade(false);
 
   await ui.dialogue([
-    { who: 'bolt', text: 'There it is up close, Cadet. The Pinwheel — a Wolf-Rayet star spinning itself to death. Stay sharp.', stamp: 'real' },
-    { who: 'luma', text: 'It\'s... beautiful. And terrible.' },
-    { who: 'bolt', text: 'Charting the burst\'s aim now... got it. The beam won\'t hit Veyra. It points PAST it — off toward a tiny faraway blue world. Huh. I\'ll log those coordinates. For later.' }
+    { who: 'rusty', text: 'Down we go — a real Martian lava tube! Caves like this could shelter explorers one day. Mind the dark!', stamp: 'real' },
+    { who: 'bolt', text: 'Drag to look, hold WALK to move, tap the Lamp if it\'s dark. Find what Mars hides best down here: WATER. Go, Cadet!' }
   ]);
-  await ui.giveCard('pinwheel');
 
-  await askScience('killerstar');
-  await askMath('subtraction', { label: 'COUNTDOWN COMPUTER', icon: '⏱️' });
-  await askScience('killerstar');
+  ui.setObjective('🔦 Explore the lava tube — find the underground water!');
+  await scene.run();        // resolves when the player reaches the water
 
-  await ui.giveClue('ks3');
+  const finds = scene.findCount || 0;
   await ui.dialogue([
-    { who: 'bolt', text: 'Wait — the core just flared! It\'s throwing a WARNING shot. Raise the deflector, NOW! Hold it steady!' }
+    { who: 'bolt', text: 'WATER! Frozen and liquid, hidden in the dark for a billion years. Where there\'s water, there might once have been LIFE.', stamp: 'real' }
   ]);
-  await pinwheelClimax(scene);
+  await ui.giveSample('hidden cave water ice', 2 + finds);
+  await askScience('mars');
 
+  await ui.giveClue('mr4');
+  game.checkBadges();   // Cave Explorer badge
   await ui.dialogue([
-    { who: 'bolt', text: 'The shield split it clean around us. But Cadet — that was only a warm-up. The real death is coming, and soon.', stamp: 'real' },
-    { who: 'luma', text: 'Then there\'s no time. We have to get every Solari off Veyra before it fires for real!' }
+    { who: 'rusty', text: 'You found it! Now we know everything Mars lost — and what it needs. There is an ancient Keystone that can wake the planet... but only for those who understand it.' }
   ]);
-  await ui.giveBeacon('the deflector buoy');
-
   await ui.fade(true);
   scene.dispose();
 }
 
 /* ============================================================
-   CHAPTER 4 — THE GREAT EVACUATION (spaceport)
+   CHAPTER 5 — THE KEYSTONE (recall mystery)
 ============================================================ */
-export async function chapterEvacuation(game) {
-  const scene = await openScene(game, 'spaceport');
-  addPinwheelSky(scene, 0xffc0b0, 12, [0, 20, -36]);   // angrier, redder now
+export async function chapterKeystone(game) {
+  const scene = await openScene(game, 'marsred');
+  addMountain(scene, 18, -34, 14);
 
-  for (let i = 0; i < 3; i++) {
-    const ark = makeShip();
-    ark.scale.setScalar(2.2);
-    ark.position.set(-13 + i * 13, 1.6, -11);
-    ark.rotation.y = 0.25;
-    scene.scene.add(ark);
+  // the Keystone: a glowing ancient monolith
+  const key = new THREE.Group();
+  const stone = new THREE.Mesh(
+    new THREE.BoxGeometry(2.2, 5, 1),
+    new THREE.MeshStandardMaterial({ color: 0x3a3050, roughness: 0.4, metalness: 0.5, emissive: 0x2a1c5a, emissiveIntensity: 0.6 })
+  );
+  stone.position.y = 2.5;
+  key.add(stone);
+  const rune = new THREE.Mesh(
+    new THREE.TorusGeometry(0.7, 0.12, 10, 24),
+    new THREE.MeshStandardMaterial({ color: 0x5ce8ff, emissive: 0x5ce8ff, emissiveIntensity: 0 })
+  );
+  rune.position.set(0, 3, 0.55);
+  key.add(rune);
+  key.userData.rune = rune;
+  scene.place(key, 0, -4, { id: 'keystone' });
+  const rusty = makeRover();
+  scene.place(rusty, -5, -1, { ry: 0.5 });
+
+  await ui.dialogue([
+    { who: 'bolt', text: 'There it is — the Keystone. The Solari\'s old machines left it to wake the planet, but it only powers up for those who truly understand Mars.' }
+  ]);
+  ui.setObjective('Tap the ancient Keystone');
+  await scene.waitInteract('keystone');
+  ui.setObjective('');
+
+  await askReadingSet('keystone', 2);
+  await ui.dialogue([
+    { who: 'keystone', text: 'TO WAKE A SLEEPING WORLD, FIRST UNDERSTAND HOW IT SLEPT. SPEAK TRUE WHAT WAS LOST, AND WHAT ALL LIFE NEEDS.' },
+    { who: 'bolt', text: 'It\'s testing everything we learned on Mars, Cadet. Remember it all — the shield, the air, the water, the secret of life. Let\'s power it up!' }
+  ]);
+
+  // the recall mystery: answer the keystone review questions, lighting the rune
+  const total = 3;
+  for (let i = 0; i < total; i++) {
+    await askScience('keystone', { label: `KEYSTONE POWER ${i + 1} OF ${total}`, icon: '🗝️', gauge: { current: i, total, icon: '🗝️' } });
+    rune.material.emissiveIntensity = (i + 1) / total * 3;   // the rune brightens with each truth
+    sfx.shard?.();
   }
-  const vega = makeAlien('solari');
-  vega.scale.setScalar(1.1);
-  scene.place(vega, -4, -1, { id: 'vega', ry: 0.4 });
-  for (let i = 0; i < 3; i++) {
-    const fam = makeAlien('solari');
-    fam.scale.setScalar(0.75);
-    scene.place(fam, 7 + i * 2.2, 3 + i, { ry: -0.6 });
-  }
 
   await ui.dialogue([
-    { who: 'bolt', text: 'Back on Veyra — the great spaceport. Three ark-ships fueled and waiting. Find Captain Vega.' }
+    { who: 'keystone', text: 'KNOWLEDGE ACCEPTED. THE ENGINES OF SPRING... AWAKEN.' },
+    { who: 'bolt', text: 'YES! The waking-engines are firing up across Mars! You did it, Cadet — you solved the Keystone with everything you learned!' }
   ]);
-  ui.setObjective('Tap Captain Vega');
-  await scene.waitInteract('vega');
-  await ui.dialogue([
-    { who: 'vega', text: 'Cadet! I am Vega, captain of the arks. Every family must be aboard before the Pinwheel dies — babies and elders first.' },
-    { who: 'vega', text: 'We cannot move a whole world. But we can carry our home in every story and song. Help me load the family pods!' }
-  ]);
-  await ui.giveCard('vega');
-
-  await askReadingSet('spaceport', 2);
-
-  const podIds = ['pod1', 'pod2', 'pod3', 'pod4'];
-  podIds.forEach((id, i) => {
-    const pod = makeBeacon();
-    pod.scale.setScalar(0.7);
-    scene.place(pod, -11 + i * 7, -6, { id });
-  });
-  await collectParts(scene, podIds, 'Carry the family pods to the arks');
-
-  await ui.dialogue([
-    { who: 'bolt', text: 'Quick logistics check, Cadet — how many seats do the arks have?' }
-  ]);
-  await askMath('multiplication', { label: 'ARK MANIFEST', icon: '🚀' });
-  await askMath('addition', { label: 'ARK MANIFEST', icon: '🚀' });
-
-  await ui.giveClue('ks4');
-  await ui.giveBeacon('the launch tower');
-  await ui.dialogue([
-    { who: 'vega', text: 'Everyone is aboard! The Pinwheel is collapsing — I can feel it. ALL SHIPS, LAUNCH!' }
-  ]);
+  await ui.giveClue('mr5');
+  game.checkBadges();   // Planet Waker badge
   await closeScene(game, scene);
 }
 
 /* ============================================================
-   CHAPTER 5 — RACE THE BEAM (self-travel escape flight)
+   CHAPTER 6 — A NEW DAWN (terraform showpiece + cliffhanger)
 ============================================================ */
-export async function chapterRace(game) {
-  await ui.dialogue([
-    { who: 'bolt', text: 'The Pinwheel\'s core is collapsing — it\'s going to fire ANY SECOND. Everybody, PUNCH IT!' },
-    { who: 'luma', text: 'Deflector wrapped around the whole fleet! Steer hard and HOLD LIGHTSPEED — we have to outrun the burst!' }
-  ]);
-
-  await ui.fade(true);
-  const ride = new HyperspaceScene(game, 'SAFE HARBOR', { peril: true });
-  game.setScene(ride);
+export async function chapterDawn(game) {
+  // --- showpiece: Mars blooms from red to blue-green ---
+  const terra = new TerraformScene(game);
+  game.setScene(terra);
+  game.pipeline.setBloom(0.95, 0.6, 0.6);
   await ui.fade(false);
-  await ride.run();      // resolves faded-to-black after arrival
-  ride.dispose();
-  ui.countJump();
 
-  await game.toBackdrop();
   await ui.dialogue([
-    { who: 'bolt', text: 'FLASH — the burst swept past right behind us! The deflector split it around the fleet. We MADE it!', stamp: 'real' },
-    { who: 'bolt', text: 'See, Cadet? A dying star is fierce — but even its beam is just light, and light still takes TIME to cross space. That sliver of time is how we outran it.', stamp: 'real' }
+    { who: 'luma', text: 'Look at it, Cadet... the engines are working. Watch the Red Planet wake up!' }
   ]);
-  await askScience('lightspeed');
-  await ui.giveClue('ks5');
-}
+  ui.setObjective('🌅 Waking the Red Planet...');
+  await animate(game.pipeline?.quality === 'low' ? 2600 : 4200, (k) => terra.setProgress(k));
+  ui.setObjective('');
+  sfx.fanfare?.();
+  await ui.dialogue([
+    { who: 'bolt', text: 'The ice is melting into new rivers. The air is thickening. Green is spreading along the old shores. Mars is ALIVE again!', stamp: 'real' },
+    { who: 'luma', text: 'A whole world, reborn. The Solari finally have a home of their own.' }
+  ]);
+  await ui.fade(true);
+  terra.dispose();
 
-/* ============================================================
-   CHAPTER 6 — SAFE HARBOR (finale)
-============================================================ */
-export async function chapterHarbor(game) {
-  const scene = await openScene(game, 'harbor');
+  // --- surface finale: the Solari's first dawn ---
+  const scene = await openScene(game, 'marsalive');
   addLuma(scene, 0, 4.5, -6);
-  for (let i = 0; i < 3; i++) {
-    const ark = makeShip();
-    ark.scale.setScalar(1.8);
-    ark.position.set(-12 + i * 12, 1.2, -12);
-    ark.rotation.y = -0.2;
-    scene.scene.add(ark);
-  }
   const sola = makeAlien('solari');
   scene.place(sola, -4, -2, { id: 'sola', ry: 0.5 });
   const vega = makeAlien('solari');
   vega.scale.setScalar(1.1);
-  scene.place(vega, 5, -1, { id: 'vega', ry: -0.5 });
+  scene.place(vega, 5, -1, { ry: -0.5 });
+  const rusty = makeRover();
+  scene.place(rusty, 1, -4, { ry: 0 });
 
   await ui.dialogue([
-    { who: 'bolt', text: 'We coasted into a calm harbor far from the Pinwheel. Look — the whole fleet made it. Every single family.' }
+    { who: 'sola', text: 'Green hills. Blue water. Warm air. You gave my people a future, Cadet. We are home at last.' },
+    { who: 'rusty', text: 'And I\'m not alone anymore! Best. Day. Ever. Beep beep!' }
   ]);
-  ui.setObjective('Tap Elder Sola');
-  await scene.waitInteract('sola');
-  await ui.dialogue([
-    { who: 'sola', text: 'You gave us tomorrow, Cadet. We will never forget the sky-traveler who read the stars for us.' },
-    { who: 'vega', text: 'We\'ve charted a course to a small red world — dusty, quiet, and safe. A good place to begin again.' },
-    { who: 'bolt', text: 'A little red world... I\'ll remember that. And Cadet — one more thing.', stamp: 'real' },
-    { who: 'bolt', text: 'That burst didn\'t stop. Its beam flies on across the galaxy, toward a tiny blue world very, very far away. It won\'t arrive for ages... but someday, somebody will have to warn them. I\'m logging where it points. For later.', stamp: 'real' }
-  ]);
+  await ui.giveCard('vega');
   await ui.giveCard('luma');
+  await askReadingSet('dawn', 2);
+  await askScience('mars');
 
-  await askReadingSet('harbor', 2);
-  await beaconPickup(scene);
-  await askScience('galaxy');
-
-  await ui.giveClue('ks6');
+  // --- the cliffhanger ---
   await ui.dialogue([
-    { who: 'luma', text: 'A whole world, saved. You\'re a real star, Cadet — the kind that lights the way home.' },
-    { who: 'player', text: 'Couldn\'t have done it without my crew. Onward — there\'s a red world waiting!' }
+    { who: 'signal', text: '...kzzt... is anyone... please... kzzt...' },
+    { who: 'bolt', text: 'Cadet — my tracker just lit up RED. That killer beam we saw long ago? It\'s now pointed straight at a small blue world. At EARTH.', stamp: 'real' },
+    { who: 'bolt', text: 'And that broken signal... it\'s coming FROM Earth. Too faint to read. They don\'t know what\'s coming for them.', stamp: 'real' },
+    { who: 'luma', text: 'Earth is unimaginably far. The only way to reach it in time is to fly so fast that TIME ITSELF bends. It\'s never been done...' },
+    { who: 'player', text: 'Then we\'ll be the first. Crew — set course for home. We have a world to warn.' }
   ]);
+  await ui.giveClue('mr6');
   await closeScene(game, scene);
+
+  await toBeContinued();
+}
+
+/** A dramatic "TO BE CONTINUED" stinger into game 5. */
+function toBeContinued() {
+  return new Promise((resolve) => {
+    const screen = document.createElement('div');
+    screen.className = 'screen dim';
+    screen.style.zIndex = 95;
+    const wrap = document.createElement('div');
+    wrap.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:16px;text-align:center;padding:0 22px;';
+    const t1 = document.createElement('div');
+    t1.style.cssText = 'font-size:clamp(22px,5vw,40px);font-weight:900;color:#ffd95c;text-shadow:0 0 18px rgba(255,217,92,0.6);';
+    t1.textContent = 'The engines blaze. The stars begin to stretch...';
+    const t2 = document.createElement('div');
+    t2.style.cssText = 'font-size:clamp(28px,7vw,60px);font-weight:900;letter-spacing:2px;color:#5ce8ff;text-shadow:0 0 24px rgba(92,232,255,0.7);';
+    t2.textContent = 'TO BE CONTINUED...';
+    const t3 = document.createElement('div');
+    t3.className = 'title-sub';
+    t3.textContent = 'Mission: Starlight 5 — racing home to warn the Earth';
+    const btn = document.createElement('button');
+    btn.className = 'big-btn';
+    btn.textContent = '🌟 You saved a world!';
+    btn.onclick = () => { sfx.fanfare?.(); screen.remove(); resolve(); };
+    wrap.append(t1, t2, t3, btn);
+    screen.appendChild(wrap);
+    document.getElementById('ui').appendChild(screen);
+  });
 }
 
 export const CHAPTER_SCRIPTS = [
-  chapterVeyra,
-  chapterObservatory,
-  chapterPinwheel,
-  chapterEvacuation,
-  chapterRace,
-  chapterHarbor
+  chapterWelcome,
+  chapterRivers,
+  chapterDeath,
+  chapterCaves,
+  chapterKeystone,
+  chapterDawn
 ];

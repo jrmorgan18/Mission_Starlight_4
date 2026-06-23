@@ -8,11 +8,21 @@ export const DEFAULT_OOPS_LIMIT = 5;
 export const OOPS_LIMIT_RANGE = [3, 4, 5, 6, 7, 8];
 
 const DEFAULT_PRIZES = [
-  { milestone: 'jump3', label: 'Make 3 hyperspace jumps', reward: '15 minutes later bedtime on weekend' },
-  { milestone: 'beacons3', label: 'Bring 3 deflector shields online', reward: 'Extra treat with dinner' },
+  { milestone: 'explorer', label: 'Find the underground water in the caves', reward: '15 minutes later bedtime on weekend' },
+  { milestone: 'samples3', label: 'Collect 3 Mars samples', reward: 'Extra treat with dinner' },
   { milestone: 'journal10', label: 'Learn 10 Star Journal facts', reward: '15 minutes extra tablet time' },
-  { milestone: 'pinwheel', label: "Survive the Pinwheel's gamma-ray burst", reward: '30 minutes extra Roblox time' },
-  { milestone: 'finish', label: 'Save the Solari and reach Safe Harbor', reward: '1 of 5 pieces toward the Grand Prize — see below!' }
+  { milestone: 'keystone', label: 'Solve the Keystone and wake the Red Planet', reward: '30 minutes extra Roblox time' },
+  { milestone: 'finish', label: 'Give the Solari a new home on Mars', reward: '1 of 5 pieces toward the Grand Prize — see below!' }
+];
+
+// Suit upgrades the cadet can buy with ⭐ stars. Effects are gentle helpers,
+// never required to finish. headlamp/grip change the cave; scanner the mystery.
+export const SUIT_UPGRADES = [
+  { id: 'headlamp', icon: '🔦', name: 'Bright Headlamp', cost: 4, desc: 'Light up dark caves much farther.' },
+  { id: 'grip',     icon: '🥾', name: 'Grip Boots',      cost: 4, desc: 'Walk faster across Mars.' },
+  { id: 'oxygen',   icon: '🫧', name: 'Big Oxygen Tank', cost: 5, desc: 'Explore longer without a worry.' },
+  { id: 'scanner',  icon: '🔎', name: 'Scanner Visor',   cost: 6, desc: 'Spot hidden clues and samples.' },
+  { id: 'color',    icon: '🎨', name: 'Crimson Paint',   cost: 3, desc: 'Repaint your suit Mars-red — just for style!' }
 ];
 
 function defaultSave() {
@@ -30,10 +40,29 @@ function defaultSave() {
     missCount: 0,        // game-wide wrong-answer tally; at 3 we ease a level back, then reset
     journal: [],         // missed-question memory entries
     factsLearned: [],    // science fact ids seen (right OR wrong) for the databank
+    samples: 0,          // Mars samples collected (drives a prize)
+    suit: {},            // owned suit-upgrade ids -> true
     parent: { prizes: DEFAULT_PRIZES, soundOn: true, musicOn: true, difficultyOffset: 0, quality: 'auto', oopsLimit: DEFAULT_OOPS_LIMIT },
     minutesPlayed: 0,
     seenIntro: false
   };
+}
+
+/** Does the cadet own a given suit upgrade? */
+export function hasUpgrade(id) {
+  return !!(loadSave().suit && loadSave().suit[id]);
+}
+
+/** Try to buy a suit upgrade; returns true on success (enough ⭐ and not owned). */
+export function buyUpgrade(id) {
+  const s = loadSave();
+  const up = SUIT_UPGRADES.find((u) => u.id === id);
+  if (!up || (s.suit && s.suit[id]) || s.starBits < up.cost) return false;
+  s.starBits -= up.cost;
+  s.suit = s.suit || {};
+  s.suit[id] = true;
+  save();
+  return true;
 }
 
 let state = null;

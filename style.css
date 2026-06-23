@@ -623,6 +623,37 @@ button { font-family: var(--font); cursor: pointer; border: none; }
 }
 #lamp-btn.off { background: rgba(30, 28, 40, 0.85); color: #8a8aa0; border-color: #44485e; box-shadow: none; }
 
+/* ---------- Suit Lab ---------- */
+.suit-panel {
+  background: var(--panel); border: 3px solid var(--glow-cyan);
+  border-radius: 22px; padding: 18px 20px; width: min(92vw, 560px);
+  max-height: 88vh; overflow-y: auto;
+  display: flex; flex-direction: column; gap: 12px;
+  box-shadow: 0 0 40px rgba(92,232,255,0.25);
+}
+.suit-head { display: flex; align-items: center; gap: 10px; }
+.suit-head h2 { margin: 0; font-size: clamp(20px, 4vw, 28px); flex: 1; }
+.suit-stars { font-size: 20px; font-weight: 900; color: var(--glow-gold); }
+.suit-sub { font-size: 15px; opacity: 0.85; }
+.suit-list { display: flex; flex-direction: column; gap: 10px; }
+.suit-row {
+  display: flex; align-items: center; gap: 12px;
+  background: rgba(92,232,255,0.06); border: 2px solid rgba(92,232,255,0.25);
+  border-radius: 14px; padding: 10px 12px;
+}
+.suit-icon { font-size: 30px; }
+.suit-info { flex: 1; }
+.suit-name { font-weight: 900; font-size: 17px; }
+.suit-desc { font-size: 13px; opacity: 0.8; }
+.suit-buy {
+  background: radial-gradient(circle at 35% 30%, #ffe9a8, var(--glow-gold) 60%, #e09020);
+  border: 3px solid rgba(255,217,92,0.6); border-radius: 999px;
+  padding: 10px 16px; font-size: 16px; font-weight: 900; color: #4a3000;
+  min-width: 74px;
+}
+.suit-buy:disabled { opacity: 0.45; }
+.suit-buy.owned { background: rgba(92,255,157,0.25); border-color: #5cff9d; color: #d8ffe8; opacity: 1; }
+
 /* ---------- Phase-A slice: killer-star showpiece ---------- */
 #slice-fps {
   position: absolute; top: calc(10px + env(safe-area-inset-top)); left: 50%;

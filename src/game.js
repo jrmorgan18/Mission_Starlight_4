@@ -3,20 +3,13 @@ import * as THREE from 'three';
 import { loadSave, save, resetSave, loadGame1Save } from './save.js';
 import { CHAPTERS, BADGES } from './content.js';
 import { CHAPTER_SCRIPTS } from './systems/chapters.js';
-import { HyperspaceScene } from './hyperspace/hyperspace.js';
-import { makeStarfield, makePlanet, makeNebulaCloud, makeGlowSprite } from './world/builders.js';
-import { makeKillerStar } from './killerstar/killerstar.js';
-import { runKillerStarSlice } from './systems/sliceScene.js';
+import { makeStarfield, makePlanet, makeNebulaCloud, makeGlowSprite, makeRover } from './world/builders.js';
 import { runCaveSlice } from './cave/caveScene.js';
 import { Pipeline } from './fx/post.js';
 import * as ui from './ui/ui.js';
-import { pickMath } from './edu/engine.js';
 import { openParentZone } from './ui/parent.js';
 import { sfx } from './audio.js';
 import { collectSagaPiece } from './saga.js';
-
-// jump-calculation skill per destination chapter (only 'jump'-arrival chapters use it)
-const JUMP_SKILLS = [null, 'addition', 'subtraction', 'multiplication', null, null];
 
 class TitleBackdrop {
   constructor(game) {
@@ -29,31 +22,31 @@ class TitleBackdrop {
     sun.position.set(30, 20, 10);
     this.scene.add(sun);
 
-    // the poster shot: the Pinwheel killer star looming over ocean-world Veyra
-    this.star = makeKillerStar(30);
-    this.star.position.set(16, 7, -64);
-    this.star.userData.setCharge(0.25);
-    this.scene.add(this.star);
-
-    const cloud = makeNebulaCloud(0x4a7ab0, 10, 50);
+    // the poster shot: red Mars beside a half-terraformed Mars, a little rover below
+    const cloud = makeNebulaCloud(0x9a5a3a, 10, 50);
     cloud.position.set(0, 8, -82);
     this.scene.add(cloud);
 
     this.planets = [];
-    const layout = [['veyra', 3.0, -12, 2, -46], ['harbor', 1.7, 18, -7, -40]];
+    const layout = [['marsred', 3.2, -13, 3, -48], ['marsalive', 2.0, 17, -6, -42]];
     for (const [key, r, x, y, z] of layout) {
       const p = makePlanet(key, r);
       p.position.set(x, y, z);
       this.scene.add(p);
       this.planets.push(p);
     }
+
+    this.rover = makeRover();
+    this.rover.scale.setScalar(2.2);
+    this.rover.position.set(2, -6, -18);
+    this.rover.rotation.y = -0.5;
+    this.scene.add(this.rover);
   }
   update(dt, t) {
     for (const p of this.planets) p.rotation.y += dt * 0.12;
-    this.star.userData.update(dt, t);
-    this.star.userData.face(this.camera);
+    this.rover.position.y = -6 + Math.sin(t * 1.5) * 0.15;
     this.camera.position.x = Math.sin(t * 0.08) * 4;
-    this.camera.lookAt(0, 0, -30);
+    this.camera.lookAt(0, -1, -30);
   }
   dispose() {}
 }
@@ -94,9 +87,8 @@ export class Game {
       sceneObj.camera.aspect = innerWidth / innerHeight;
       sceneObj.camera.updateProjectionMatrix();
       this.pipeline.attach(sceneObj.scene, sceneObj.camera);
-      // scene-appropriate bloom: hyperspace and the title burn brighter
-      if (sceneObj instanceof HyperspaceScene) this.pipeline.setBloom(0.85, 0.55, 0.8);
-      else if (sceneObj instanceof TitleBackdrop) this.pipeline.setBloom(1.0, 0.65, 0.75);
+      // scene-appropriate bloom (chapters override this for their showpieces)
+      if (sceneObj instanceof TitleBackdrop) this.pipeline.setBloom(0.95, 0.6, 0.7);
       else this.pipeline.setBloom(0.8, 0.55, 0.85);
     }
   }
@@ -116,7 +108,7 @@ export class Game {
         ui.rewardBurst(badge.icon, `Badge earned: ${badge.name}!`,
           prize ? `Show a grown-up — this badge is worth a real prize: "${prize.reward}" 🎁` : 'You\'re becoming a legend of the spaceways!');
       }
-      if (badge.id === 'finish' && earned) collectSagaPiece('game3');
+      if (badge.id === 'finish' && earned) collectSagaPiece('game4');
     }
   }
 
@@ -125,34 +117,6 @@ export class Game {
     if (!this.backdrop) this.backdrop = new TitleBackdrop(this);
     this.setScene(this.backdrop);
     if (ui.isFaded()) await ui.fade(false);
-  }
-
-  /** Jump calculations (math gate) + ride the light-river to a destination. */
-  async jump(chapterIdx, destName) {
-    if (ui.isFaded()) await this.toBackdrop();
-    await ui.dialogue([
-      { who: 'luma', text: `Course locked on ${destName}! The light-river is humming...` },
-      { who: 'bolt', text: 'But a jump needs JUMP CALCULATIONS — true numbers to plot the way. Ready, Cadet?' }
-    ]);
-    const skill = JUMP_SKILLS[chapterIdx] || 'addition';
-    for (let i = 0; i < 2; i++) {
-      await ui.askQuestion(pickMath(skill), {
-        contextLabel: `JUMP CALCULATION ${i + 1} OF 2`,
-        icon: '🌀',
-        gauge: { current: i, total: 2, icon: '🌀' }
-      });
-    }
-    await ui.dialogue([
-      { who: 'bolt', text: 'Gate is OPEN! Steer with the joystick, hold LIGHTSPEED to zoom, catch ⭐ photons, and dodge those purple gravity ripples!' }
-    ]);
-
-    await ui.fade(true);
-    const ride = new HyperspaceScene(this, destName);
-    this.setScene(ride);
-    await ui.fade(false);
-    await ride.run();      // resolves faded-to-black after arrival
-    ride.dispose();
-    ui.countJump();
   }
 
   async start() {
@@ -170,12 +134,12 @@ export class Game {
     if (!s.cards.includes('bolt')) { s.cards.push('bolt'); save(); }   // Bolt is always aboard
     await this.toBackdrop();
 
-    // same github.io origin: greet the returning hero of game 2 by name
+    // same github.io origin: greet the returning hero of game 3 by name
     const g1 = loadGame1Save();
     let greeting = null;
     if (g1?.name && !s.name) {
-      greeting = g1.chapter >= 7
-        ? `🏅 Welcome back, Cadet ${g1.name} — Hero of the Heart!`
+      greeting = g1.chapter >= 6
+        ? `🏅 Welcome back, Cadet ${g1.name} — Star Rescuer!`
         : `👋 Good to see you again, Cadet ${g1.name}!`;
     }
 
@@ -188,8 +152,8 @@ export class Game {
     if (!s.name) {
       const name = await ui.nameEntry(g1?.name || '');
       s.name = name;
-      if (g1?.chapter >= 7 && g1?.name?.toLowerCase() === name.toLowerCase()) {
-        s.game1Hero = true;   // unlocks the Hero of the Heart badge (finished game 2)
+      if (g1?.chapter >= 6 && g1?.name?.toLowerCase() === name.toLowerCase()) {
+        s.game1Hero = true;   // unlocks the Star Rescuer badge (finished game 3)
       }
       save();
       this.checkBadges();
@@ -200,10 +164,9 @@ export class Game {
       save();
       await ui.dialogue([
         { who: 'bolt', text: `Cadet ${s.name}, reporting for duty! Bolt here, fact-checker chip warmed up. Beep!` },
-        { who: 'luma', text: 'And me! I\'m flying as your navigator now. Bolt, play them the message we caught...' },
-        { who: 'signal', text: '...please... our star is dying... please, help us...' },
-        { who: 'bolt', text: 'A whole civilization is calling — the Solari, on an ocean world far across the galaxy. A giant star near them is about to die... and it might take their world with it.', stamp: 'real' },
-        { who: 'bolt', text: 'There\'s no time to lose. Plot the jump, Cadet. We\'re going to save them.' }
+        { who: 'luma', text: 'We saved the Solari from their dying star — but they still need somewhere to live. So we found them a world...' },
+        { who: 'bolt', text: 'A small, red, rocky world: MARS. There\'s just one problem, Cadet. When we got close, we found out Mars is... well... a DEAD planet.', stamp: 'real' },
+        { who: 'bolt', text: 'Cold. Dry. Silent. But maybe — just maybe — we can wake it back up. Buckle up. Let\'s land on the Red Planet.' }
       ]);
     }
 
@@ -214,13 +177,8 @@ export class Game {
       if (ui.isFaded()) await this.toBackdrop();
       try {
         await ui.chapterCard(i + 1, ch.name, ch.sub);
-        if (ch.arrival === 'self') {
-          /* the chapter flies itself (the "race the beam" escape) */
-        } else if (ch.arrival === 'fade') {
-          await ui.fade(true);      // a quiet montage-style arrival
-        } else {
-          await this.jump(i, ch.name);
-        }
+        // every chapter builds its own scene; fade to black first unless it manages itself
+        if (ch.arrival !== 'self') await ui.fade(true);
         await CHAPTER_SCRIPTS[i](this);
         const st = loadSave();
         st.chapter = i + 1;
@@ -250,7 +208,7 @@ export class Game {
     if (!ui.isFaded()) await ui.fade(true);
     await this.toBackdrop();
     await ui.dialogue([
-      { who: 'bolt', text: `Oops meter's full, Cadet — totally okay! Let's loop back to ${CHAPTERS[target].name} and warm up those brain-thrusters. 🚀` }
+      { who: 'bolt', text: `Oops meter's full, Cadet — totally okay! Let's roll back to ${CHAPTERS[target].name} and warm up those brain-thrusters. 🚀` }
     ]);
   }
 
@@ -261,9 +219,7 @@ export class Game {
       try {
         const ch = CHAPTERS[pick];
         await ui.chapterCard(pick + 1, ch.name, ch.sub);
-        if (ch.arrival === 'self') { /* chapter flies itself */ }
-        else if (ch.arrival === 'fade') await ui.fade(true);
-        else await this.jump(pick, ch.name);
+        if (ch.arrival !== 'self') await ui.fade(true);
         await CHAPTER_SCRIPTS[pick](this);
       } catch (e) {
         if (!(e instanceof ui.DemotionSignal)) throw e;   // in free-play, just bow back out to the menu
@@ -277,7 +233,7 @@ export class Game {
       screen.className = 'screen dim';
       const title = document.createElement('div');
       title.className = 'title-sub';
-      title.textContent = '🌟 Mission complete! Ride any light-river again:';
+      title.textContent = '🌟 Mission complete! Revisit any part of Mars:';
       screen.appendChild(title);
       const wrap = document.createElement('div');
       wrap.style.cssText = 'display:flex;flex-wrap:wrap;gap:10px;justify-content:center;max-width:80vw;';

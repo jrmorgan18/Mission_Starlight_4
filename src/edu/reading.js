@@ -1,6 +1,5 @@
-// Reading comprehension passages for Mission: Starlight 3 — Solari greetings,
-// sky-watch logs, evacuation notices, and a postcard home. Written at roughly a
-// 2nd-3rd grade level.
+// Reading comprehension passages for Mission: Starlight 4 — Rusty's logs, the
+// Solari's hopes, and the secrets of Mars. Roughly 2nd-3rd grade level.
 
 function rq(concept, prompt, options, answer, explain) {
   return { kind: 'reading', skill: 'reading', concept, prompt, options, answer, explain };
@@ -8,48 +7,48 @@ function rq(concept, prompt, options, answer, explain) {
 
 export const READING_BANK = [
   {
-    id: 'veyra-welcome', chapter: 'veyra', title: 'A Welcome from Veyra',
-    text: 'Welcome, sky-traveler, to Veyra! We are the Solari, and our world is one big shining ocean dotted with coral cities. We have two lights in our sky. One is our own small sun, warm and kind. The other is the Pinwheel — a giant star that spins and glitters far away. For a long time the Pinwheel kept us company. But lately it spins faster and faster, and our elders are afraid. Please, will you help us read its secrets?',
+    id: 'rover-log', chapter: 'welcome', title: "Rusty's Lonely Log",
+    text: 'Rover log, day nine thousand and something. I have lost count! My name is Rusty. For many, many years I have rolled across Mars all alone, taking pictures of red rocks and bigger red rocks. It is cold here, and very quiet. The sky is a dusty pink. There is a volcano so tall its top pokes above the clouds, and a canyon so deep you could lose a whole city in it. I always hoped that one day, someone would come. Today my camera saw a ship in the sky. Could it be? Friends, at last?',
     questions: [
-      rq('veyra-welcome-q1', 'What are the Solari\'s cities made of?', ['Coral', 'Ice', 'Glass towers'], 'Coral', 'The welcome says Veyra is "one big shining ocean dotted with coral cities."'),
-      rq('veyra-welcome-q2', 'How many lights are in Veyra\'s sky?', ['Two', 'One', 'Seven'], 'Two', 'They have "two lights": their own small sun, and the giant Pinwheel star.'),
-      rq('veyra-welcome-q3', 'Why are the elders afraid?', ['The Pinwheel spins faster and faster', 'The ocean is freezing', 'They lost their boats'], 'The Pinwheel spins faster and faster', 'The passage says: "lately it spins faster and faster, and our elders are afraid."')
+      rq('rover-log-q1', "What is the rover's name?", ['Rusty', 'Sparky', 'Bolt'], 'Rusty', 'The log says: "My name is Rusty."'),
+      rq('rover-log-q2', 'How does Rusty feel about being on Mars?', ['Lonely — he hoped someone would come', 'Happy and busy', 'Scared of the rocks'], 'Lonely — he hoped someone would come', 'Rusty says it is quiet and lonely, and "I always hoped that one day, someone would come."'),
+      rq('rover-log-q3', 'What did Rusty\'s camera see today?', ['A ship in the sky', 'A shooting star', 'A new rock'], 'A ship in the sky', 'The log ends: "Today my camera saw a ship in the sky. Friends, at last?"')
     ]
   },
   {
-    id: 'skywatch-log', chapter: 'observatory', title: "Astra's Sky-Watch Log",
-    text: 'Sky-watch log. I am Astra, keeper of the tower. Tonight I turned the great telescope on the Pinwheel again. It is a Wolf-Rayet star — the biggest, hottest kind, almost out of fuel. It is shedding two glowing arms of dust as it spins, like a pinwheel toy. Here is what worries me: a spinning star this big can die in a gamma-ray burst, a beam of deadly light. A beam only burns what it points at. So my most important question is not WHEN it will fire. It is WHERE it will point.',
+    id: 'river-map', chapter: 'rivers', title: 'The Map of Ghost Rivers',
+    text: 'Rusty unrolled an old map. "See these long winding lines?" he said. "They look like rivers — because they ARE rivers, or they were, long ago. Mars used to be warm. Rain fell, rivers ran, and lakes filled up. I have rolled along these dry riverbeds for years. The water is gone now, but the shapes it carved are still here, like footprints in dried mud. If you want to know what happened to Mars, follow the ghost rivers."',
     questions: [
-      rq('skywatch-q1', 'What kind of star is the Pinwheel?', ['A Wolf-Rayet star, almost out of fuel', 'A baby star just forming', 'A small cool star'], 'A Wolf-Rayet star, almost out of fuel', 'Astra says: "It is a Wolf-Rayet star — the biggest, hottest kind, almost out of fuel."'),
-      rq('skywatch-q2', 'What can a spinning star this big do when it dies?', ['Fire a gamma-ray burst — a beam of deadly light', 'Turn into a planet', 'Go quietly dark'], 'Fire a gamma-ray burst — a beam of deadly light', 'The log warns it "can die in a gamma-ray burst, a beam of deadly light."'),
-      rq('skywatch-q3', 'What is Astra\'s MOST important question?', ['WHERE the beam will point', 'What color the star is', 'How to name the star'], 'WHERE the beam will point', 'Astra says her most important question is "not WHEN it will fire. It is WHERE it will point." A beam only burns what it aims at!')
+      rq('river-map-q1', 'What do the long winding lines on the map show?', ['Rivers that used to flow on Mars', 'Roads for cars', 'Cracks in the glass'], 'Rivers that used to flow on Mars', 'Rusty says the lines "look like rivers — because they ARE rivers, or they were, long ago."'),
+      rq('river-map-q2', 'What was Mars like when the rivers flowed?', ['Warm, with rain and lakes', 'Frozen and dark', 'Covered in cities'], 'Warm, with rain and lakes', 'The passage says: "Mars used to be warm. Rain fell, rivers ran, and lakes filled up."'),
+      rq('river-map-q3', 'What does Rusty compare the dry riverbeds to?', ['Footprints in dried mud', 'Pictures in a book', 'Cracks in an egg'], 'Footprints in dried mud', 'He says the carved shapes are "still here, like footprints in dried mud."')
     ]
   },
   {
-    id: 'pinwheel-readout', chapter: 'pinwheel', title: 'The Deflector Readout',
-    text: 'DEFLECTOR FIELD MANUAL. When a star throws a flare, do not run — there is no time. Instead, charge the deflector shield. The shield bends and splits the deadly light so it slides around your ship like a stream around a rock. Hold the charge until the flash passes. Remember: the Pinwheel\'s spin means the worst is still coming. This flare is only a warning shot. Use it to practice, then save the real shield for the day the star dies.',
+    id: 'shield-story', chapter: 'death', title: 'Why Mars Fell Asleep',
+    text: 'Bolt explained the sad story. "Long ago, deep inside Mars, a spinning iron heart made an invisible magnetic shield, like an umbrella over the whole planet. That shield kept the solar wind — a stream of tiny particles from the Sun — from blowing the air away. But Mars is small, and its iron heart cooled and slowed, and the shield faded. With the umbrella gone, the solar wind stripped the air away, bit by bit. The warm world grew cold. The water froze and escaped. And Mars fell asleep. Earth is luckier — its shield is still strong."',
     questions: [
-      rq('pinwheel-readout-q1', 'When a star throws a flare, what should you do?', ['Charge the deflector shield', 'Run away', 'Take a photo'], 'Charge the deflector shield', 'The manual says: "do not run — there is no time. Instead, charge the deflector shield."'),
-      rq('pinwheel-readout-q2', 'What does the shield do to the deadly light?', ['Bends and splits it around the ship', 'Soaks it up like a sponge', 'Turns it into music'], 'Bends and splits it around the ship', 'The shield "bends and splits the deadly light so it slides around your ship like a stream around a rock."'),
-      rq('pinwheel-readout-q3', 'What is this flare, really?', ['Only a warning shot', 'The end of the star', 'A friendly hello'], 'Only a warning shot', 'The manual says: "This flare is only a warning shot... save the real shield for the day the star dies."')
+      rq('shield-q1', 'What did the magnetic shield protect Mars from?', ['The solar wind blowing its air away', 'Falling rocks', 'Too much rain'], 'The solar wind blowing its air away', 'Bolt says the shield "kept the solar wind... from blowing the air away."'),
+      rq('shield-q2', 'Why did the shield fade?', ['Mars is small, so its iron heart cooled and slowed', 'Someone turned it off', 'The Sun grew too bright'], 'Mars is small, so its iron heart cooled and slowed', 'The story says: "Mars is small, and its iron heart cooled and slowed, and the shield faded."'),
+      rq('shield-q3', 'What is different about Earth?', ['Its magnetic shield is still strong', 'It has no air at all', 'It is smaller than Mars'], 'Its magnetic shield is still strong', 'Bolt says: "Earth is luckier — its shield is still strong."')
     ]
   },
   {
-    id: 'evac-notice', chapter: 'spaceport', title: 'Evacuation Notice',
-    text: 'ALL SOLARI: please read. By order of Captain Vega, every family must board an ark-ship before the Pinwheel dies. Bring only what you can carry. Each ark holds many families in cozy pods. Babies and elders board first, then everyone else, pod by pod, in calm and careful lines. Do not be afraid. We are not losing our home for nothing — we are carrying it with us, in every story and song. A new world is waiting.',
+    id: 'keystone-note', chapter: 'keystone', title: 'The Keystone Riddle',
+    text: 'Carved on the ancient Keystone were these words: "To wake a sleeping world, you must first understand how it slept. Speak true what the Red Planet lost, and true what all living things need, and the engines of spring will turn. Knowledge is the only key that fits this lock." Bolt whirred. "It is testing us, Cadet. Everything we learned on Mars — the shield, the air, the water, the secret of life — we have to remember it now. Are you ready?"',
     questions: [
-      rq('evac-q1', 'Who must board an ark-ship?', ['Every family', 'Only the captains', 'Only the children'], 'Every family', 'The notice says "every family must board an ark-ship before the Pinwheel dies."'),
-      rq('evac-q2', 'Who boards the arks FIRST?', ['Babies and elders', 'The strongest workers', 'The captains'], 'Babies and elders', 'The notice says: "Babies and elders board first, then everyone else."'),
-      rq('evac-q3', 'What are the Solari carrying with them?', ['Their home — in every story and song', 'Nothing at all', 'The whole ocean'], 'Their home — in every story and song', 'Vega writes: "we are carrying it with us, in every story and song."')
+      rq('keystone-note-q1', 'What does the Keystone need to open?', ['True answers about what Mars lost and what life needs', 'A metal key', 'A magic word'], 'True answers about what Mars lost and what life needs', 'The carving says to "speak true what the Red Planet lost, and true what all living things need."'),
+      rq('keystone-note-q2', 'What is "the only key that fits this lock"?', ['Knowledge', 'Gold', 'Strength'], 'Knowledge', 'The Keystone says: "Knowledge is the only key that fits this lock."'),
+      rq('keystone-note-q3', 'What does Bolt say they have to do?', ['Remember everything they learned on Mars', 'Dig a deep hole', 'Fly back home'], 'Remember everything they learned on Mars', 'Bolt says: "Everything we learned on Mars... we have to remember it now."')
     ]
   },
   {
-    id: 'harbor-postcard', chapter: 'harbor', title: 'A Postcard from Safe Harbor',
-    text: 'Dear Cadet, we made it. The whole fleet is safe at the harbor, and the Solari are already singing again. Captain Vega has set course for a small red world to begin a new life there. One more thing, and Bolt says it is important: that deadly beam did not stop at the Pinwheel. It flies on across the galaxy, on and on, toward a tiny blue world very far away. It will not arrive for a long, long time. But someday, somebody will need to send that little blue world a warning. We wrote down where it points. For later. — Luma',
+    id: 'dawn-letter', chapter: 'dawn', title: 'A New Dawn — and a Warning',
+    text: 'Dear Cadet, look what we did together! The engines are warming Mars. The ice is melting into the first new rivers, the air is growing thick enough to breathe, and tiny green plants are opening along the old shores. The Solari are home. But Bolt\'s tracker is flashing red. That old killer beam, the one we saw long ago, is now pointed at a small blue world — EARTH. And a broken little signal is coming from there, too faint to read. We cannot fly there the normal way; it is too far. We will have to go so fast that time itself bends. Hold on tight. — Luma',
     questions: [
-      rq('harbor-q1', 'Where has Captain Vega set course?', ['A small red world', 'Back to the Pinwheel', 'The center of the galaxy'], 'A small red world', 'The postcard says Vega "has set course for a small red world to begin a new life there." (That sounds like Mars!)'),
-      rq('harbor-q2', 'What did the deadly beam do after the Pinwheel?', ['It flies on toward a tiny blue world far away', 'It stopped and faded', 'It turned around'], 'It flies on toward a tiny blue world far away', 'Bolt notes the beam "flies on across the galaxy... toward a tiny blue world very far away."'),
-      rq('harbor-q3', 'Will the beam reach the blue world soon?', ['No — not for a long, long time', 'Yes, tomorrow', 'It already did'], 'No — not for a long, long time', 'The postcard says: "It will not arrive for a long, long time." Light is fast, but space is huge!')
+      rq('dawn-q1', 'What is happening to Mars now?', ['It is warming, with new rivers, air, and green plants', 'It is freezing solid', 'It is breaking apart'], 'It is warming, with new rivers, air, and green plants', 'The letter says the engines are warming Mars, the ice is melting, and "tiny green plants are opening."'),
+      rq('dawn-q2', 'What is the killer beam now pointed at?', ['Earth, a small blue world', 'The Moon', 'Another star'], 'Earth, a small blue world', 'Luma writes the beam "is now pointed at a small blue world — EARTH."'),
+      rq('dawn-q3', 'How will they reach Earth in time?', ['Fly so fast that time itself bends', 'Walk', 'Wait for it to come closer'], 'Fly so fast that time itself bends', 'The letter says: "We will have to go so fast that time itself bends." (That\'s a hint about the next adventure!)')
     ]
   }
 ];

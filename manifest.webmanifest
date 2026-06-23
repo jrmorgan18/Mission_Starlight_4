@@ -1,7 +1,7 @@
 {
-  "name": "Mission: Starlight 3 — Race the Dying Star",
-  "short_name": "Starlight 3",
-  "description": "Race across the galaxy to save the Solari from the Pinwheel, a giant star about to die in a gamma-ray burst.",
+  "name": "Mission: Starlight 4 — Waking the Red Planet",
+  "short_name": "Starlight 4",
+  "description": "Land on Mars, discover why a planet dies, explore caves for hidden water, and wake the Red Planet to give the Solari a new home.",
   "start_url": ".",
   "display": "fullscreen",
   "orientation": "landscape",

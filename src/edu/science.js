@@ -19,10 +19,45 @@ export const TOPIC_NAMES = {
   galaxy: 'The Milky Way',
   stars: 'Stars & Nebulas',
   killerstar: 'Stars That Kill',
+  mars: 'The Red Planet',
+  keystone: 'The Keystone',
   general: 'Space Explorer'
 };
 
 export const SCIENCE_BANK = [
+  // --- Mars: the Red Planet (game 4) ---
+  sq('mars-red', 'mars', 'Why is Mars called the Red Planet?', 'It is covered in rusty red dust', ['It is very hot', 'It is made of ketchup', 'It glows like fire'],
+    'Mars is red because its dust is full of iron that rusted — the whole planet is covered in rust!'),
+  sq('mars-volcano', 'mars', 'What is Olympus Mons on Mars?', 'The biggest volcano in the solar system', ['A giant lake', 'A space station', 'A kind of moon'],
+    'Olympus Mons is a volcano on Mars about three times taller than Mount Everest — the tallest known in the whole solar system!'),
+  sq('mars-canyon', 'mars', 'Valles Marineris on Mars is a giant...', 'Canyon', ['Ocean', 'Forest', 'City'],
+    'Valles Marineris is a canyon so long it would stretch across the whole United States. It makes the Grand Canyon look tiny!'),
+  sq('mars-water-past', 'mars', 'Long ago, what did Mars have that it does not have now?', 'Rivers, lakes, and lots of liquid water', ['Tall trees', 'Big cities', 'Two suns'],
+    'Mars used to be warm and wet, with rivers and lakes. We can still see the dry riverbeds they left behind!'),
+  sq('mars-cold', 'mars', 'What is Mars like today?', 'Cold, dry, and dusty', ['Warm and rainy', 'Covered in oceans', 'Hot like the Sun'],
+    'Today Mars is a frozen desert — colder than Antarctica, with thin air and red dust storms.'),
+  sq('mars-moons', 'mars', 'How many moons does Mars have?', 'Two', ['None', 'Twelve', 'A hundred'],
+    'Mars has two tiny lumpy moons: Phobos and Deimos. They look like little potatoes in the sky!'),
+  sq('mars-shield', 'mars', 'Why did Mars lose its air and water?', 'It lost its magnetic shield, so the solar wind blew them away', ['It got too crowded', 'A comet drank them', 'It rained too much'],
+    'Mars lost its magnetic shield. Without that shield the solar wind slowly stripped its air and water into space.'),
+  sq('mars-shield-earth', 'mars', 'What protects Earth\'s air from the solar wind?', "Earth's magnetic shield", ['The Moon', 'Clouds', 'Airplanes'],
+    "Earth has a strong magnetic shield made deep in its core. It deflects the solar wind and keeps our air safe — Mars lost its long ago."),
+  sq('mars-life', 'mars', 'Why do scientists look for WATER when hunting for life?', 'Every living thing we know needs water', ['Water is shiny', 'Water is heavy', 'Water tastes good'],
+    'Everywhere we find life on Earth, we find water. So "follow the water" is how we hunt for life on other worlds!'),
+  sq('mars-caves', 'mars', 'Why might Martian caves be special?', 'They could shelter explorers and hold hidden ice', ['They are full of gold', 'They lead to Earth', 'They are warm and sunny'],
+    'Mars has lava-tube caves that could shield future explorers from radiation and cold — and may hide frozen water!'),
+  sq('mars-terraform', 'mars', 'What would "waking up" Mars mean?', 'Warming it and giving it air and water again', ['Painting it blue', 'Pushing it closer to the Sun', 'Waking it from a nap'],
+    'Making Mars livable — warming it, thickening its air, melting its ice — is called terraforming. A huge dream for the future!'),
+
+  // --- The Keystone: review of the whole game's big ideas (recall finale) ---
+  sq('key-lost', 'keystone', 'KEYSTONE: What three things did Mars lose?', 'Its shield, then its air, then its water', ['Its moons, rings, and color', 'Its rovers, caves, and dust', 'Its name, map, and song'],
+    'First Mars lost its magnetic SHIELD, then the solar wind took its AIR, and then its WATER froze and escaped. Three losses — that\'s how a planet dies.'),
+  sq('key-life', 'keystone', 'KEYSTONE: What does every living thing we know need?', 'Water', ['Gold', 'Moonlight', 'Music'],
+    'Water! That\'s why finding water in the caves matters so much — water is the first key to life.'),
+  sq('key-wake', 'keystone', 'KEYSTONE: To wake Mars, what must we give it back?', 'Warmth, air, and water', ['Rust, dust, and rocks', 'Two more moons', 'A coat of paint'],
+    'To wake the Red Planet we give back what it lost: warmth, air, and water. Then green things can grow again.'),
+  sq('key-shield', 'keystone', 'KEYSTONE: What kept Earth safe but Mars did not have?', 'A magnetic shield', ['A bigger moon', 'More volcanoes', 'A thicker crust'],
+    'Earth\'s magnetic shield protects our air and water. Mars lost its shield — and lost everything else after.'),
   // --- Stars That Kill (game 3) ---
   sq('ks-wolfrayet', 'killerstar', 'What is a Wolf-Rayet star?', 'A giant star near the end of its life', ['A baby star just forming', 'A planet made of fire', 'A kind of comet'],
     'Wolf-Rayet stars are huge, super-hot stars blasting their outer layers into space. They live fast and die young!'),

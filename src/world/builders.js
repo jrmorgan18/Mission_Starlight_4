@@ -148,6 +148,32 @@ const WORLD_RECIPES = {
     speckle(ctx, w, h, '#bfe8ff', 40, 2, 7, 0.4);
     hctx.fillStyle = '#808080'; hctx.fillRect(0, 0, w, h);
     heightSpeckle(hctx, w, h, 70, 5, 24, true);
+  },
+  marsred(ctx, w, h, hctx) {           // Mars today — rusty red desert
+    const g = ctx.createLinearGradient(0, 0, 0, h);
+    g.addColorStop(0, '#c2603a'); g.addColorStop(0.5, '#a8482a'); g.addColorStop(1, '#7a3420');
+    ctx.fillStyle = g; ctx.fillRect(0, 0, w, h);
+    speckle(ctx, w, h, '#d88a5a', 120, 6, 30, 0.45);   // dusty highlights
+    speckle(ctx, w, h, '#5a2616', 110, 8, 36, 0.5);    // dark rock
+    speckle(ctx, w, h, '#e8a060', 60, 2, 8, 0.4);      // bright dust
+    // a few craters
+    ctx.globalAlpha = 0.4; ctx.strokeStyle = '#4a1e10'; ctx.lineWidth = 4;
+    for (let i = 0; i < 18; i++) { ctx.beginPath(); ctx.arc(Math.random() * w, Math.random() * h, rand(14, 50), 0, Math.PI * 2); ctx.stroke(); }
+    ctx.globalAlpha = 1;
+    hctx.fillStyle = '#808080'; hctx.fillRect(0, 0, w, h);
+    heightSpeckle(hctx, w, h, 150, 6, 34, true);
+    heightSpeckle(hctx, w, h, 70, 3, 12, false);
+  },
+  marsalive(ctx, w, h, hctx) {         // Mars terraformed — blue seas, green shores
+    const g = ctx.createLinearGradient(0, 0, 0, h);
+    g.addColorStop(0, '#3a86b8'); g.addColorStop(0.45, '#2e6e9a'); g.addColorStop(1, '#1a5276');
+    ctx.fillStyle = g; ctx.fillRect(0, 0, w, h);
+    speckle(ctx, w, h, '#4aa86a', 70, 12, 46, 0.6);    // green continents
+    speckle(ctx, w, h, '#6ec88a', 50, 5, 18, 0.5);     // forests
+    speckle(ctx, w, h, '#c8945a', 40, 4, 16, 0.4);     // remaining red highlands
+    speckle(ctx, w, h, '#eafaff', 70, 2, 7, 0.5);      // clouds
+    hctx.fillStyle = '#808080'; hctx.fillRect(0, 0, w, h);
+    heightSpeckle(hctx, w, h, 80, 5, 26, false);
   }
 };
 
@@ -511,6 +537,46 @@ export function makeAlien(kind) {
   return g;
 }
 
+/** Rusty — a lonely little Mars rover: boxy body, six wheels, camera mast, panels. */
+export function makeRover() {
+  const r = new THREE.Group();
+  const metal = new THREE.MeshStandardMaterial({ color: 0xd8c2a0, roughness: 0.5, metalness: 0.55 });
+  const dusty = new THREE.MeshStandardMaterial({ color: 0xb07a52, roughness: 0.85, metalness: 0.2 });
+
+  const body = new THREE.Mesh(new THREE.BoxGeometry(1.3, 0.5, 1.9), dusty);
+  body.position.y = 0.7;
+  r.add(body);
+
+  // wheels (3 a side)
+  for (const side of [-1, 1]) {
+    for (const z of [-0.6, 0, 0.6]) {
+      const wheel = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.28, 0.2, 12), new THREE.MeshStandardMaterial({ color: 0x2a2a30, roughness: 0.9 }));
+      wheel.rotation.z = Math.PI / 2;
+      wheel.position.set(side * 0.78, 0.28, z);
+      r.add(wheel);
+    }
+  }
+  // solar-panel wings
+  for (const side of [-1, 1]) {
+    const panel = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.04, 1.4), new THREE.MeshStandardMaterial({ color: 0x223a6a, roughness: 0.3, metalness: 0.6, emissive: 0x14203a, emissiveIntensity: 0.4 }));
+    panel.position.set(side * 1.0, 1.0, 0);
+    r.add(panel);
+  }
+  // camera mast with a big friendly eye
+  const mast = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.8, 8), metal);
+  mast.position.set(0, 1.3, -0.7);
+  r.add(mast);
+  const head = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.35, 0.35), metal);
+  head.position.set(0, 1.75, -0.7);
+  r.add(head);
+  const reye = new THREE.Mesh(new THREE.SphereGeometry(0.13, 16, 12), new THREE.MeshStandardMaterial({ color: 0x5ce8ff, emissive: 0x5ce8ff, emissiveIntensity: 2.4 }));
+  reye.position.set(0, 1.75, -0.9);
+  r.add(reye);
+  r.userData.eye = reye;
+  r.userData.bobs = true;   // gentle idle
+  return r;
+}
+
 /* ---------------- landmarks ---------------- */
 
 /** The Star Gate: a great double ring of ancient metal with glowing glyphs. */
@@ -587,7 +653,8 @@ export function makeLighthouse(height = 7) {
 /* ---------------- terrain & props ---------------- */
 
 const GROUND_KEYS = { planet9: 'planet9', proxima: 'proxima', trappist: 'trappist', cancri: 'cancri', pulsar: 'station', finale: 'nebula', blackhole: 'station',
-  veyra: 'veyra', observatory: 'station', spaceport: 'station', harbor: 'harbor', race: 'station' };
+  veyra: 'veyra', observatory: 'station', spaceport: 'station', harbor: 'harbor', race: 'station',
+  marsred: 'marsred', marscanyon: 'marsred', marspolar: 'marsred', marsalive: 'marsalive' };
 
 export function makeGround(key, size = 60) {
   const geo = new THREE.PlaneGeometry(size, size, 48, 48);

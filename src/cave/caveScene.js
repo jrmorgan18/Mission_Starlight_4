@@ -10,11 +10,11 @@ import * as THREE from 'three';
 import { makeGlowSprite, makeCrystal, makeRock, worldTexture } from '../world/builders.js';
 import * as ui from '../ui/ui.js';
 import { sfx } from '../audio.js';
-import { loadSave, save } from '../save.js';
+import { loadSave, save, hasUpgrade } from '../save.js';
 
 const TUBE_R = 4.4;          // tunnel radius
 const CLAMP_R = 3.3;         // how close to the wall the player may drift
-const WALK_SPEED = 9;
+const WALK_SPEED = 9;        // base; Grip Boots upgrade makes it faster
 const LOOK_SENS = 0.0045;
 
 // the winding, descending path of the lava tube — long enough to feel like a
@@ -61,9 +61,14 @@ export class CaveScene {
     const tubeGeo = new THREE.TubeGeometry(this.curve, 220, TUBE_R, 16, false);
     this.scene.add(new THREE.Mesh(tubeGeo, tubeMat));
 
+    // upgrades: Bright Headlamp reaches farther, Grip Boots walk faster
+    this.bright = hasUpgrade('headlamp');
+    this.walkSpeed = hasUpgrade('grip') ? WALK_SPEED * 1.4 : WALK_SPEED;
+    this.lampPower = this.bright ? 32 : 18;
+
     // headlamp: a spotlight riding the camera
     this.lampOn = true;
-    this.lamp = new THREE.SpotLight(0xfff1d8, 18, 40, Math.PI / 4.5, 0.5, 1.2);
+    this.lamp = new THREE.SpotLight(0xfff1d8, this.lampPower, this.bright ? 60 : 40, Math.PI / 4.5, 0.5, 1.2);
     this.lamp.position.set(0, 0, 0);
     this.lampTarget = new THREE.Object3D();
     this.scene.add(this.lamp, this.lampTarget);
@@ -258,7 +263,7 @@ export class CaveScene {
       dir.y = 0;
       if (dir.lengthSq() > 1e-4) {
         dir.normalize();
-        this.camera.position.addScaledVector(dir, WALK_SPEED * dt);
+        this.camera.position.addScaledVector(dir, this.walkSpeed * dt);
       }
     }
 
@@ -278,7 +283,7 @@ export class CaveScene {
     const look = new THREE.Vector3();
     this.camera.getWorldDirection(look);
     this.lampTarget.position.copy(this.camera.position).add(look.multiplyScalar(8));
-    this.lamp.intensity = this.lampOn ? 18 : 0;
+    this.lamp.intensity = this.lampOn ? this.lampPower : 0;
     this.fill.position.copy(this.camera.position);
 
     // ---- water shimmer + objective ----

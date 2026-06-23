@@ -1,43 +1,43 @@
-// Story content for Mission: Starlight 3 — "Race the Dying Star".
-// Based on the "Stars That Kill" episode: rescue the Solari of ocean-world
-// Veyra from the Pinwheel, a Wolf-Rayet star about to fire a gamma-ray burst.
-// Sets up game 4 (relocate the survivors to Mars) and woven hints that the
-// same danger could one day point at Earth (game 5).
+// Story content for Mission: Starlight 4 — "Waking the Red Planet".
+// Based on the "Life and Death on the Red Planet" episode: escort the Solari to
+// Mars, discover why a planet dies (and whether it ever lived), and wake Mars
+// back up so the Solari can settle. Ends on a big cliffhanger into game 5 — a
+// gamma-ray beam now bearing on Earth, and a garbled signal from home.
 
 export const CHAPTERS = [
-  { id: 0, key: 'veyra',       name: 'Arrival at Veyra',     sub: 'A world under two suns',          world: 'veyra',       arrival: 'fade' },
-  { id: 1, key: 'observatory', name: 'The Sky-Watchers',     sub: "Reading a star's fate",           world: 'observatory', arrival: 'jump' },
-  { id: 2, key: 'pinwheel',    name: 'The Pinwheel',         sub: 'Face to face with a killer star', world: 'pinwheel',    arrival: 'jump' },
-  { id: 3, key: 'spaceport',   name: 'The Great Evacuation', sub: 'Every family aboard',             world: 'spaceport',   arrival: 'jump' },
-  { id: 4, key: 'race',        name: 'Race the Beam',        sub: 'Outrun the dying light',          world: 'race',        arrival: 'self' },
-  { id: 5, key: 'harbor',      name: 'Safe Harbor',          sub: 'A new dawn — and a far warning',  world: 'harbor',      arrival: 'fade' }
+  { id: 0, key: 'welcome',  name: 'The Red Welcome',      sub: 'A world fast asleep',         world: 'marsred',  arrival: 'fade' },
+  { id: 1, key: 'rivers',   name: 'The Ghost Rivers',     sub: 'Mars was once warm and wet',  world: 'marscanyon', arrival: 'rover' },
+  { id: 2, key: 'death',    name: 'Why a Planet Dies',    sub: 'The shield that failed',      world: 'marspolar', arrival: 'rover' },
+  { id: 3, key: 'caves',    name: 'Into the Caves',       sub: 'The deepest secret of Mars',  world: 'cave',     arrival: 'cave' },
+  { id: 4, key: 'keystone', name: 'The Keystone',         sub: 'Everything you have learned', world: 'marsred',  arrival: 'rover' },
+  { id: 5, key: 'dawn',     name: 'A New Dawn',           sub: 'Waking the Red Planet',       world: 'marsalive', arrival: 'fade' }
 ];
 
 export const CLUES = {
-  ks1: { id: 'ks1', icon: '🌟', title: 'A World Under Two Suns', text: 'Veyra has a gentle little sun of its own — but a second, dazzling star hangs in its sky: the Pinwheel. Bolt says it is a Wolf-Rayet star, the biggest and hottest kind, near the end of its life. (Bolt stamps this REAL SCIENCE.)' },
-  ks2: { id: 'ks2', icon: '🌀', title: 'The Spinning Star', text: 'The sky-watchers showed us the Pinwheel is spinning fast and flinging out spiral dust. When a star like this dies, its spin can fire a GAMMA-RAY BURST — a narrow beam of killing light. (REAL SCIENCE.)' },
-  ks3: { id: 'ks3', icon: '🧭', title: 'Where the Beam Points', text: 'Up close, Bolt charted the beam\'s aim. It does NOT point at Veyra — it points past it, off toward a tiny faraway blue world. Strange... Bolt quietly logged the coordinates "for later."' },
-  ks4: { id: 'ks4', icon: '🚀', title: 'The Ark Plan', text: 'You cannot move a whole world in time. The plan instead: build ark-ships and lift every Solari family to safety before the Pinwheel dies.' },
-  ks5: { id: 'ks5', icon: '⚡', title: 'The Burst', text: 'The Pinwheel died — and fired its beam exactly where Bolt predicted. The deflector split it around the fleet and everyone made it out. A dying star is fierce, but even its light still takes TIME to travel.' },
-  ks6: { id: 'ks6', icon: '🔵', title: 'A Message for Home', text: 'The beam runs on across the galaxy toward that small blue world — our own Earth, far in the future. Someday someone will have to send a warning home. For now the Solari are safe, setting course for a little red planet to begin again.' }
+  mr1: { id: 'mr1', icon: '🔴', title: 'A Dead World', text: 'Mars is cold, dry, and silent — rusty-red from iron, with the biggest volcano and the deepest canyon in the solar system. It looks like a world fast asleep. (Bolt stamps this REAL SCIENCE.)' },
+  mr2: { id: 'mr2', icon: '🏞️', title: 'The Ghost Rivers', text: 'Dry riverbeds and old lake shores cover Mars. Long ago it was WARM and WET — rivers, lakes, maybe even an ocean! Something took the water away. (REAL SCIENCE.)' },
+  mr3: { id: 'mr3', icon: '🧲', title: 'The Shield That Failed', text: 'Mars lost its magnetic shield. Without it, the solar wind slowly stripped its air and water out into space — and the warm, wet world froze. That is how a planet dies. (REAL SCIENCE.)' },
+  mr4: { id: 'mr4', icon: '💧', title: 'Water in the Dark', text: 'Deep in a lava-tube cave we found hidden water ice — and ripples of an ancient streambed. Where there is water, there might once have been LIFE. (REAL SCIENCE.)' },
+  mr5: { id: 'mr5', icon: '🗝️', title: 'The Keystone Opens', text: 'By remembering everything we learned — what Mars lost, and what life needs — we powered the ancient Keystone and started the engines that will wake the Red Planet.' },
+  mr6: { id: 'mr6', icon: '🔵', title: 'A Cry from Home', text: 'As Mars turned green, Bolt\'s tracker screamed: the old gamma-ray beam is now bearing on EARTH — and a faint, broken signal is coming FROM home. There is only one way to get there in time: fly so fast that time itself bends.' }
 };
 
 export const CARDS = [
-  { id: 'bolt',     face: '🤖', name: 'Bolt',          desc: 'Your robot co-pilot and fact-checker. Stamps every fact REAL or STORY MAGIC.' },
-  { id: 'luma',     face: '🌟', name: 'Luma',          desc: 'The little star you once carried home — now your ship\'s glowing navigator.' },
-  { id: 'sola',     face: '👽', name: 'Elder Sola',    desc: 'Wise leader of the Solari. She has watched the Pinwheel her whole long life.' },
-  { id: 'pip',      face: '🐚', name: 'Pip',           desc: 'A curious young Solari who shows you around Veyra\'s coral cities.' },
-  { id: 'astra',    face: '🔭', name: 'Astra',         desc: 'Keeper of the sky-watch tower. She reads the future in starlight.' },
-  { id: 'vega',     face: '🚀', name: 'Captain Vega',  desc: 'Commander of the Solari ark-fleet. She never leaves anyone behind.' },
-  { id: 'pinwheel', face: '🌀', name: 'The Pinwheel',  desc: 'A Wolf-Rayet star spinning toward its death — beautiful, and deadly.' },
-  { id: 'veyra',    face: '🌊', name: 'Veyra',         desc: 'An ocean world of coral cities, home of the gentle Solari.' }
+  { id: 'bolt',  face: '🤖', name: 'Bolt',         desc: 'Your robot co-pilot and fact-checker. Stamps every fact REAL or STORY MAGIC.' },
+  { id: 'luma',  face: '🌟', name: 'Luma',         desc: 'The little star you carried home, long ago — now your ship\'s glowing navigator.' },
+  { id: 'rusty', face: '🤖', name: 'Rusty',        desc: 'A lonely old Mars rover who has explored the Red Planet alone for ages. Overjoyed to finally have friends!' },
+  { id: 'sola',  face: '👽', name: 'Elder Sola',   desc: 'Wise leader of the Solari, searching for a new home for her people.' },
+  { id: 'vega',  face: '🚀', name: 'Captain Vega', desc: 'Commander of the Solari ark-fleet. Never leaves anyone behind.' },
+  { id: 'pip',   face: '🐚', name: 'Pip',          desc: 'A curious young Solari, full of questions about the strange red world.' },
+  { id: 'mars',  face: '🔴', name: 'Mars',         desc: 'The Red Planet — once warm and wet, now cold and quiet. Could it live again?' },
+  { id: 'olympus', face: '🌋', name: 'Olympus Mons', desc: 'The tallest volcano in the whole solar system — three times higher than Mount Everest!' }
 ];
 
 export const BADGES = [
-  { id: 'jump3',     icon: '🌀', name: 'River Rider',       test: (s) => s.jumps >= 3 },
-  { id: 'beacons3',  icon: '🛡️', name: 'Shield Bearer',     test: (s) => s.beacons >= 3 },
-  { id: 'journal10', icon: '📔', name: 'Star Scholar',      test: (s) => (s.factsLearned.length + s.journal.length) >= 10 },
-  { id: 'pinwheel',  icon: '⚡', name: 'Star Tamer',        test: (s) => s.clues.includes('ks5') },
-  { id: 'finish',    icon: '🌟', name: 'Star Rescuer',      test: (s) => s.chapter >= 6 },
-  { id: 'hero2',     icon: '🏅', name: 'Hero of the Heart', test: (s) => !!s.game1Hero }
+  { id: 'explorer', icon: '💧', name: 'Cave Explorer',  test: (s) => s.clues.includes('mr4') },
+  { id: 'samples3', icon: '🪨', name: 'Rock Hound',     test: (s) => (s.samples || 0) >= 3 },
+  { id: 'journal10', icon: '📔', name: 'Star Scholar',  test: (s) => (s.factsLearned.length + s.journal.length) >= 10 },
+  { id: 'keystone', icon: '🗝️', name: 'Planet Waker',   test: (s) => s.clues.includes('mr5') },
+  { id: 'finish',   icon: '🌅', name: 'World Builder',  test: (s) => s.chapter >= 6 },
+  { id: 'hero3',    icon: '🏅', name: 'Star Rescuer',   test: (s) => !!s.game1Hero }
 ];
