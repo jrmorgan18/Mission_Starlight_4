@@ -14,13 +14,23 @@ import { loadSave, save } from '../save.js';
 
 const TUBE_R = 4.4;          // tunnel radius
 const CLAMP_R = 3.3;         // how close to the wall the player may drift
-const WALK_SPEED = 7.5;
+const WALK_SPEED = 9;
 const LOOK_SENS = 0.0045;
 
-// the winding, descending path of the lava tube
+// the winding, descending path of the lava tube — long enough to feel like a
+// real expedition, with twists, climbs, and dips
 const PATH = [
-  [0, 1.5, 5], [0, 1.0, -8], [7, 0, -18], [3, -1.6, -30],
-  [-7, -3, -40], [-3, -4.6, -52], [2, -5, -63]
+  [0, 1.5, 5], [0, 1.0, -9], [8, 0.5, -20], [10, -1, -32],
+  [3, -1.6, -43], [-6, -2.2, -53], [-12, -3.6, -64], [-6, -5, -76],
+  [4, -5.4, -87], [11, -6, -99], [5, -7.6, -111], [-5, -8, -122],
+  [-2, -9, -134]
+];
+
+// fraction-of-path positions where a glowing find waits (ice + ancient hints)
+const FINDS = [
+  { at: 0.26, label: '🧊 Water ice in the rock!' },
+  { at: 0.52, label: '🪨 Strange ripples — an ancient streambed!' },
+  { at: 0.78, label: '✨ Glittering mineral veins!' }
 ];
 
 export class CaveScene {
@@ -79,6 +89,20 @@ export class CaveScene {
       r.position.copy(this.samples[i]).add(new THREE.Vector3((Math.random() - 0.5) * 4, -TUBE_R * 0.8, (Math.random() - 0.5) * 4));
       this.scene.add(r);
     }
+
+    // discoveries along the way: glowing samples to find before the water
+    this.finds = [];
+    for (const f of FINDS) {
+      const idx = Math.floor(f.at * (this.samples.length - 1));
+      const base = this.samples[idx];
+      const gem = makeCrystal(0x9fe8ff, 1.3);
+      gem.position.copy(base).add(new THREE.Vector3((Math.random() - 0.5) * 3, -TUBE_R * 0.55, (Math.random() - 0.5) * 3));
+      const halo = makeGlowSprite(0x8fd8ff, 3);
+      halo.position.copy(gem.position).add(new THREE.Vector3(0, 0.8, 0));
+      this.scene.add(gem, halo);
+      this.finds.push({ pos: gem.position.clone(), label: f.label, found: false, gem, halo });
+    }
+    this.findCount = 0;
 
     // the prize: an underground water pool in the final chamber
     this.waterPos = this.samples[this.samples.length - 1].clone();
@@ -262,11 +286,27 @@ export class CaveScene {
     this.pool.material.emissiveIntensity = 0.55 + Math.sin(t * 1.6) * 0.2;
     this.motes.rotation.y = t * 0.03;
 
+    // intermediate discoveries — bob/spin them and pick them up on approach
+    for (const f of this.finds) {
+      if (f.found) continue;
+      f.gem.rotation.y += dt * 1.5;
+      f.halo.scale.setScalar(3 + Math.sin(t * 3) * 0.4);
+      if (this.camera.position.distanceTo(f.pos) < 4.5) {
+        f.found = true;
+        this.findCount++;
+        sfx.collect?.();
+        ui.toast(f.label, true);
+        this.scene.remove(f.gem, f.halo);
+      }
+    }
+
     if (!this.found) {
       const dist = this.camera.position.distanceTo(this.waterPos);
-      ui.setObjective(this.lampOn
-        ? `🔦 Explore the lava tube — find the underground water!`
-        : `💡 (Tip: tap the Lamp to see in the dark!)`);
+      ui.setObjective(!this.lampOn
+        ? `💡 (Tip: tap the Lamp to see in the dark!)`
+        : this.findCount < this.finds.length
+          ? `🔦 Explore the lava tube — found ${this.findCount}/${this.finds.length} clues... keep going deeper!`
+          : `💧 So close — find the underground water!`);
       if (dist < 6) {
         this.found = true;
         ui.setObjective('');
