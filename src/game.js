@@ -5,6 +5,8 @@ import { CHAPTERS, BADGES } from './content.js';
 import { CHAPTER_SCRIPTS } from './systems/chapters.js';
 import { makeStarfield, makePlanet, makeNebulaCloud, makeGlowSprite, makeRover } from './world/builders.js';
 import { runCaveSlice } from './cave/caveScene.js';
+import { HyperspaceScene } from './hyperspace/hyperspace.js';
+import { RoverDriveScene } from './rover/roverDrive.js';
 import { Pipeline } from './fx/post.js';
 import * as ui from './ui/ui.js';
 import { openParentZone } from './ui/parent.js';
@@ -112,6 +114,41 @@ export class Game {
     }
   }
 
+  /** Transition INTO a chapter: a star-flight to Mars, a rover drive between
+   *  sites, or a simple fade. The chapter script then builds its own scene. */
+  async arrive(ch) {
+    if (ch.arrival === 'self') return;
+    if (ch.arrival === 'flight') {
+      if (ui.isFaded()) await this.toBackdrop();
+      await ui.dialogue([
+        { who: 'luma', text: 'Course locked on Mars! Hold tight, Cadet — riding the star-stream all the way to the Red Planet!' },
+        { who: 'bolt', text: 'Steer with the joystick, hold LIGHTSPEED to zoom, and grab the ⭐ stars along the way!' }
+      ]);
+      await ui.fade(true);
+      const ride = new HyperspaceScene(this, 'MARS');
+      this.setScene(ride);
+      await ui.fade(false);
+      await ride.run();
+      ride.dispose();
+      ui.countJump();
+      return;
+    }
+    if (ch.arrival === 'drive') {
+      if (ui.isFaded()) await this.toBackdrop();
+      await ui.dialogue([
+        { who: 'rusty', text: `Hop aboard — I'll drive us to ${ch.name}! Steer me with the joystick, hold GO to roll faster, and scoop up any ⭐ stars you see!` }
+      ]);
+      await ui.fade(true);
+      const drive = new RoverDriveScene(this, ch.name);
+      this.setScene(drive);
+      await ui.fade(false);
+      await drive.run();
+      drive.dispose();
+      return;
+    }
+    await ui.fade(true);   // plain montage-style arrival
+  }
+
   /** If the screen is still black from a scene change, fade back in over the starry backdrop. */
   async toBackdrop() {
     if (!this.backdrop) this.backdrop = new TitleBackdrop(this);
@@ -177,8 +214,7 @@ export class Game {
       if (ui.isFaded()) await this.toBackdrop();
       try {
         await ui.chapterCard(i + 1, ch.name, ch.sub);
-        // every chapter builds its own scene; fade to black first unless it manages itself
-        if (ch.arrival !== 'self') await ui.fade(true);
+        await this.arrive(ch);
         await CHAPTER_SCRIPTS[i](this);
         const st = loadSave();
         st.chapter = i + 1;
@@ -219,7 +255,7 @@ export class Game {
       try {
         const ch = CHAPTERS[pick];
         await ui.chapterCard(pick + 1, ch.name, ch.sub);
-        if (ch.arrival !== 'self') await ui.fade(true);
+        await this.arrive(ch);
         await CHAPTER_SCRIPTS[pick](this);
       } catch (e) {
         if (!(e instanceof ui.DemotionSignal)) throw e;   // in free-play, just bow back out to the menu

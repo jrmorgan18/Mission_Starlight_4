@@ -164,16 +164,86 @@ const WORLD_RECIPES = {
     heightSpeckle(hctx, w, h, 150, 6, 34, true);
     heightSpeckle(hctx, w, h, 70, 3, 12, false);
   },
-  marsalive(ctx, w, h, hctx) {         // Mars terraformed — blue seas, green shores
-    const g = ctx.createLinearGradient(0, 0, 0, h);
-    g.addColorStop(0, '#3a86b8'); g.addColorStop(0.45, '#2e6e9a'); g.addColorStop(1, '#1a5276');
-    ctx.fillStyle = g; ctx.fillRect(0, 0, w, h);
-    speckle(ctx, w, h, '#4aa86a', 70, 12, 46, 0.6);    // green continents
-    speckle(ctx, w, h, '#6ec88a', 50, 5, 18, 0.5);     // forests
-    speckle(ctx, w, h, '#c8945a', 40, 4, 16, 0.4);     // remaining red highlands
-    speckle(ctx, w, h, '#eafaff', 70, 2, 7, 0.5);      // clouds
-    hctx.fillStyle = '#808080'; hctx.fillRect(0, 0, w, h);
-    heightSpeckle(hctx, w, h, 80, 5, 26, false);
+  marsalive(ctx, w, h, hctx) {         // Mars terraformed — a living world: oceans, green
+                                       // continents with coastlines, rivers, lakes, ice caps
+    // deep ocean
+    const sea = ctx.createLinearGradient(0, 0, 0, h);
+    sea.addColorStop(0, '#1f6fa8'); sea.addColorStop(0.5, '#1a5f96'); sea.addColorStop(1, '#16507e');
+    ctx.fillStyle = sea; ctx.fillRect(0, 0, w, h);
+    // subtle ocean depth variation
+    speckle(ctx, w, h, '#2a7ab0', 60, 30, 90, 0.25);
+    speckle(ctx, w, h, '#14486e', 50, 20, 70, 0.25);
+
+    // --- build organic continents from clustered blobs ---
+    const blob = (cx, cy, r, fill) => {
+      ctx.fillStyle = fill;
+      ctx.beginPath();
+      const pts = 14;
+      for (let i = 0; i <= pts; i++) {
+        const a = (i / pts) * Math.PI * 2;
+        const rr = r * (0.7 + Math.sin(a * 3 + cx) * 0.18 + Math.random() * 0.18);
+        const x = cx + Math.cos(a) * rr, y = cy + Math.sin(a) * rr * 0.8;
+        i ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+      }
+      ctx.closePath(); ctx.fill();
+    };
+    const continents = [[360, 420, 230], [820, 560, 180], [1280, 360, 260], [1700, 620, 210], [560, 800, 150]];
+    // sandy coastlines (drawn slightly larger, under the green)
+    for (const [cx, cy, r] of continents) blob(cx, cy, r * 1.12, '#caa86a');
+    // green land
+    for (const [cx, cy, r] of continents) blob(cx, cy, r, '#3e8e54');
+    // darker forest patches + lighter grassland on the land
+    ctx.save();
+    for (const [cx, cy, r] of continents) {
+      for (let i = 0; i < 26; i++) {
+        const a = Math.random() * Math.PI * 2, d = Math.random() * r * 0.8;
+        const x = cx + Math.cos(a) * d, y = cy + Math.sin(a) * d * 0.8;
+        ctx.fillStyle = Math.random() < 0.5 ? '#2f7a44' : '#6abf76';
+        ctx.globalAlpha = 0.6;
+        ctx.beginPath(); ctx.arc(x, y, 6 + Math.random() * 22, 0, Math.PI * 2); ctx.fill();
+      }
+    }
+    ctx.globalAlpha = 1; ctx.restore();
+
+    // rivers winding to the sea, and lakes
+    ctx.strokeStyle = '#3a90c8'; ctx.lineWidth = 5; ctx.lineCap = 'round';
+    for (const [cx, cy, r] of continents) {
+      for (let k = 0; k < 3; k++) {
+        let x = cx + (Math.random() - 0.5) * r, y = cy + (Math.random() - 0.5) * r;
+        ctx.beginPath(); ctx.moveTo(x, y);
+        for (let j = 0; j < 7; j++) { x += rand(-46, 46); y += rand(20, 60); ctx.lineTo(x, y); }
+        ctx.stroke();
+      }
+      ctx.fillStyle = '#357fb4';
+      for (let k = 0; k < 4; k++) {
+        ctx.beginPath();
+        ctx.ellipse(cx + (Math.random() - 0.5) * r, cy + (Math.random() - 0.5) * r, rand(8, 26), rand(6, 16), 0, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    // polar ice caps
+    ctx.fillStyle = '#eef6ff';
+    ctx.globalAlpha = 0.92;
+    ctx.fillRect(0, 0, w, 60); ctx.fillRect(0, h - 56, w, 56);
+    ctx.globalAlpha = 0.5;
+    ctx.fillRect(0, 60, w, 34); ctx.fillRect(0, h - 90, w, 34);
+    ctx.globalAlpha = 1;
+
+    // wispy clouds
+    speckle(ctx, w, h, '#f4fbff', 70, 6, 26, 0.28);
+    speckle(ctx, w, h, '#ffffff', 40, 3, 12, 0.3);
+
+    // height map: land raised, oceans low
+    hctx.fillStyle = '#5a5a5a'; hctx.fillRect(0, 0, w, h);   // ocean = low
+    const hscale = 0.5;
+    for (const [cx, cy, r] of continents) {
+      hctx.fillStyle = '#b8b8b8';
+      hctx.beginPath();
+      hctx.ellipse(cx * hscale, cy * hscale, r * hscale, r * hscale * 0.8, 0, 0, Math.PI * 2);
+      hctx.fill();
+    }
+    heightSpeckle(hctx, w, h, 80, 4, 18, false);
   }
 };
 

@@ -509,6 +509,49 @@ export function animate(ms, step) {
   });
 }
 
+/* ============ Mars: Boulder Hunt ============
+   Heavy boulders hide the old river stones. Walk to a boulder to heave it
+   aside — some hide a stone, some are just dust. Find N stones. Harder than a
+   plain walk-and-collect because you can't see what's underneath. */
+export async function boulderHunt(scene, boulderIds, needed) {
+  let found = 0;
+  let remaining = [...boulderIds];
+  while (found < needed && remaining.length) {
+    ui.setObjective(`🪨 Heave the boulders aside — find ${found}/${needed} river stones`);
+    const id = await tapAny(scene, remaining);
+    const item = scene.interactives.get(id);
+    scene.clearMarker(id);
+    scene.interactives.delete(id);
+    remaining = remaining.filter((x) => x !== id);
+
+    const boulder = item.obj;
+    sfx.thrust?.();
+    // heave it: roll sideways and tip over
+    const dir = boulder.position.x >= 0 ? 1 : -1;
+    const sx = boulder.position.x, sz = boulder.position.z;
+    await animate(650, (k) => {
+      boulder.position.x = sx + dir * 3 * k;
+      boulder.position.z = sz + 1.2 * k;
+      boulder.rotation.z -= dir * k * 2.4;
+      boulder.position.y = Math.abs(Math.sin(k * Math.PI)) * 0.8 + 0.5;
+    });
+
+    if (boulder.userData.hasStone) {
+      found++;
+      sfx.shard?.();
+      const stone = makeCrystal(0xbfd0ff, 1.3);
+      stone.position.set(sx, 0, sz);
+      scene.scene.add(stone);
+      ui.toast(`💎 A smooth river stone! ${found}/${needed}`, true);
+    } else {
+      sfx.bump?.();
+      ui.toast('💨 Just red dust under that one — try another!');
+    }
+  }
+  ui.setObjective('');
+  sfx.fanfare?.();
+}
+
 /** Drop a glowing beacon shard into the scene and have the hero collect it. */
 export async function beaconPickup(scene) {
   const beacon = makeBeacon();

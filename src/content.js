@@ -5,11 +5,11 @@
 // gamma-ray beam now bearing on Earth, and a garbled signal from home.
 
 export const CHAPTERS = [
-  { id: 0, key: 'welcome',  name: 'The Red Welcome',      sub: 'A world fast asleep',         world: 'marsred',  arrival: 'fade' },
-  { id: 1, key: 'rivers',   name: 'The Ghost Rivers',     sub: 'Mars was once warm and wet',  world: 'marscanyon', arrival: 'rover' },
-  { id: 2, key: 'death',    name: 'Why a Planet Dies',    sub: 'The shield that failed',      world: 'marspolar', arrival: 'rover' },
-  { id: 3, key: 'caves',    name: 'Into the Caves',       sub: 'The deepest secret of Mars',  world: 'cave',     arrival: 'cave' },
-  { id: 4, key: 'keystone', name: 'The Keystone',         sub: 'Everything you have learned', world: 'marsred',  arrival: 'rover' },
+  { id: 0, key: 'welcome',  name: 'The Red Welcome',      sub: 'A world fast asleep',         world: 'marsred',  arrival: 'flight' },
+  { id: 1, key: 'rivers',   name: 'The Ghost Rivers',     sub: 'Mars was once warm and wet',  world: 'marscanyon', arrival: 'drive' },
+  { id: 2, key: 'death',    name: 'Why a Planet Dies',    sub: 'The shield that failed',      world: 'marspolar', arrival: 'drive' },
+  { id: 3, key: 'caves',    name: 'Into the Caves',       sub: 'The deepest secret of Mars',  world: 'cave',     arrival: 'drive' },
+  { id: 4, key: 'keystone', name: 'The Keystone',         sub: 'Everything you have learned', world: 'marsred',  arrival: 'drive' },
   { id: 5, key: 'dawn',     name: 'A New Dawn',           sub: 'Waking the Red Planet',       world: 'marsalive', arrival: 'fade' }
 ];
 

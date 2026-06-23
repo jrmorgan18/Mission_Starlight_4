@@ -654,6 +654,28 @@ button { font-family: var(--font); cursor: pointer; border: none; }
 .suit-buy:disabled { opacity: 0.45; }
 .suit-buy.owned { background: rgba(92,255,157,0.25); border-color: #5cff9d; color: #d8ffe8; opacity: 1; }
 
+/* ---------- Keystone puzzle ---------- */
+.ks-title { font-size: clamp(18px, 3.4vw, 26px); font-weight: 900; color: #ffd95c; text-shadow: 0 0 14px rgba(255,217,92,0.5); text-align: center; }
+.ks-arch { display: flex; flex-direction: column-reverse; align-items: center; gap: 5px; margin: 6px 0; }
+.ks-slot {
+  height: 30px; border-radius: 8px;
+  border: 2px dashed rgba(140,120,200,0.5); background: rgba(40,32,70,0.4);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; font-weight: 900; color: transparent;
+}
+.ks-slot.filled {
+  border-style: solid; border-color: #5ce8ff; color: #062536;
+  background: radial-gradient(circle at 40% 30%, #bfe8ff, #5ce8ff 70%, #2fb9d6);
+  box-shadow: 0 0 16px rgba(92,232,255,0.6);
+}
+.ks-tray { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; margin-top: 8px; max-width: 80vw; }
+.ks-piece {
+  width: 62px; height: 62px; border-radius: 14px;
+  background: radial-gradient(circle at 35% 30%, #6a5a9a, #3a3050 70%);
+  border: 3px solid #8a7ac0; color: #ffe9a8;
+  font-size: 28px; font-weight: 900; box-shadow: 0 4px 14px rgba(0,0,0,0.5);
+}
+
 /* ---------- Phase-A slice: killer-star showpiece ---------- */
 #slice-fps {
   position: absolute; top: calc(10px + env(safe-area-inset-top)); left: 50%;

@@ -4,7 +4,7 @@
 // marks REAL SCIENCE vs STORY MAGIC.
 import * as THREE from 'three';
 import { WorldScene } from './worldScene.js';
-import { collectParts, animate } from './minigames.js';
+import { collectParts, boulderHunt, animate } from './minigames.js';
 import { CaveScene } from '../cave/caveScene.js';
 import { TerraformScene, makeSolarWind } from '../mars/showpieces.js';
 import { makeAlien, makeLuma, makeRover, makeRock, makeCrystal, makeShip, makeGlowSprite, makePlanet } from '../world/builders.js';
@@ -142,13 +142,19 @@ export async function chapterRivers(game) {
 
   await askReadingSet('rivers', 2);
 
-  // collect ancient river stones (samples)
-  const stoneIds = ['rs1', 'rs2', 'rs3'];
-  stoneIds.forEach((id, i) => {
-    const stone = makeCrystal(0xbfd0ff, 1.0);
-    scene.place(stone, -10 + i * 9, -6 - (i % 2) * 3, { id });
+  // boulder hunt: heave 6 boulders aside; 3 of them hide a river stone
+  await ui.dialogue([
+    { who: 'rusty', text: 'The smooth river stones rolled under these boulders ages ago. Heave the boulders aside to find them — but you can\'t tell which hides one until you try!' }
+  ]);
+  const boulderIds = ['bh1', 'bh2', 'bh3', 'bh4', 'bh5', 'bh6'];
+  const stonePlaces = new Set([0, 2, 4]);   // which boulders hide a stone
+  boulderIds.forEach((id, i) => {
+    const b = makeRock(1.1 + Math.random() * 0.5, 0x8a4a30);
+    b.userData.hasStone = stonePlaces.has(i);
+    const x = -12 + i * 4.6, z = -5 - (i % 2) * 4;
+    scene.place(b, x, z, { id });
   });
-  await collectParts(scene, stoneIds, 'Gather smooth river stones');
+  await boulderHunt(scene, boulderIds, 3);
   await ui.giveSample('smooth water-worn river stones', 3);
 
   await askScience('mars');
@@ -187,9 +193,15 @@ export async function chapterDeath(game) {
 
   await askReadingSet('death', 2);
 
-  // raise-the-shield moment
+  // raise-the-shield moment — POWER it up with math first
   await ui.dialogue([
-    { who: 'rusty', text: 'I kept a spare shield bubble! Quick — tap to RAISE THE SHIELD and watch what it does to the wind!' }
+    { who: 'rusty', text: 'I kept a spare shield bubble! But the generator needs POWER. Solve the power numbers, then we raise it!' }
+  ]);
+  for (let i = 0; i < 2; i++) {
+    await askMath('addition', { label: `SHIELD POWER ${i + 1} OF 2`, icon: '🧲', gauge: { current: i, total: 2, icon: '🛡️' } });
+  }
+  await ui.dialogue([
+    { who: 'bolt', text: 'Generator charged! Now — RAISE THE SHIELD and watch what it does to the solar wind!' }
   ]);
   await raiseShieldMoment(wind);
   await ui.dialogue([
@@ -288,33 +300,102 @@ export async function chapterKeystone(game) {
   scene.place(rusty, -5, -1, { ry: 0.5 });
 
   await ui.dialogue([
-    { who: 'bolt', text: 'There it is — the Keystone. The Solari\'s old machines left it to wake the planet, but it only powers up for those who truly understand Mars.' }
+    { who: 'bolt', text: 'There it is — the Keystone. But it\'s in PIECES, scattered by a billion years of dust storms. First we have to put it back together.' }
   ]);
-  ui.setObjective('Tap the ancient Keystone');
+  ui.setObjective('Tap the broken Keystone');
   await scene.waitInteract('keystone');
   ui.setObjective('');
 
-  await askReadingSet('keystone', 2);
+  // STAGE 1: fit the keystone pieces together (sequencing puzzle)
   await ui.dialogue([
-    { who: 'keystone', text: 'TO WAKE A SLEEPING WORLD, FIRST UNDERSTAND HOW IT SLEPT. SPEAK TRUE WHAT WAS LOST, AND WHAT ALL LIFE NEEDS.' },
-    { who: 'bolt', text: 'It\'s testing everything we learned on Mars, Cadet. Remember it all — the shield, the air, the water, the secret of life. Let\'s power it up!' }
+    { who: 'rusty', text: 'Fit the pieces in order, bottom to top — follow the numbers to build the arch!' }
   ]);
+  await keystonePuzzle();
+  rune.material.emissiveIntensity = 1;
+  sfx.fanfare?.();
 
-  // the recall mystery: answer the keystone review questions, lighting the rune
+  // STAGE 2: the ancient language turns out to be MATH
+  await askReadingSet('keystone', 1);
+  await ui.dialogue([
+    { who: 'keystone', text: 'THE GLYPHS GLOW...' },
+    { who: 'bolt', text: 'Cadet — the ancient language is NUMBERS! It\'s math! Solve the glyph-sums to unlock the final lock.' }
+  ]);
+  for (let i = 0; i < 2; i++) {
+    await askMath('addition', { label: `ANCIENT GLYPHS ${i + 1} OF 2`, icon: '🔣', gauge: { current: i, total: 2, icon: '🗝️' } });
+    rune.material.emissiveIntensity = 1.5 + i;
+  }
+
+  // STAGE 3: the final mystery — recall everything learned on Mars
+  await ui.dialogue([
+    { who: 'keystone', text: 'ONE LOCK REMAINS. SPEAK TRUE WHAT THE RED PLANET LOST, AND WHAT ALL LIFE NEEDS.' },
+    { who: 'bolt', text: 'This is it — the final mystery. Remember everything: the shield, the air, the water, the secret of life!' }
+  ]);
   const total = 3;
   for (let i = 0; i < total; i++) {
-    await askScience('keystone', { label: `KEYSTONE POWER ${i + 1} OF ${total}`, icon: '🗝️', gauge: { current: i, total, icon: '🗝️' } });
-    rune.material.emissiveIntensity = (i + 1) / total * 3;   // the rune brightens with each truth
+    await askScience('keystone', { label: `FINAL MYSTERY ${i + 1} OF ${total}`, icon: '🗝️', gauge: { current: i, total, icon: '🗝️' } });
+    rune.material.emissiveIntensity = 3 + i;   // the rune blazes brighter with each truth
     sfx.shard?.();
   }
 
   await ui.dialogue([
     { who: 'keystone', text: 'KNOWLEDGE ACCEPTED. THE ENGINES OF SPRING... AWAKEN.' },
-    { who: 'bolt', text: 'YES! The waking-engines are firing up across Mars! You did it, Cadet — you solved the Keystone with everything you learned!' }
+    { who: 'bolt', text: 'YES! The waking-engines are firing up across Mars! You did it, Cadet — you rebuilt the Keystone AND solved its mystery!' }
   ]);
   await ui.giveClue('mr5');
   game.checkBadges();   // Planet Waker badge
   await closeScene(game, scene);
+}
+
+/** Fit the Keystone pieces together: tap the glowing pieces in number order
+ *  (1..5) to build the arch from the bottom up. Wrong taps just bounce. */
+function keystonePuzzle() {
+  return new Promise((resolve) => {
+    const N = 5;
+    const screen = document.createElement('div');
+    screen.className = 'screen dim';
+    screen.style.zIndex = 65;
+    screen.innerHTML = '<div class="ks-title">🗝️ Fit the Keystone pieces together!</div>';
+
+    const arch = document.createElement('div');
+    arch.className = 'ks-arch';
+    const slots = [];
+    for (let i = 0; i < N; i++) {
+      const slot = document.createElement('div');
+      slot.className = 'ks-slot';
+      slot.style.width = `${120 + (N - i) * 26}px`;   // wide base, narrow top
+      arch.appendChild(slot);
+      slots.push(slot);
+    }
+    screen.appendChild(arch);
+
+    const tray = document.createElement('div');
+    tray.className = 'ks-tray';
+    const order = [...Array(N).keys()].map((i) => i + 1).sort(() => Math.random() - 0.5);
+    let next = 1;
+    for (const n of order) {
+      const piece = document.createElement('button');
+      piece.className = 'ks-piece';
+      piece.textContent = n;
+      piece.onclick = () => {
+        if (n === next) {
+          sfx.collect?.();
+          piece.disabled = true;
+          piece.style.visibility = 'hidden';
+          const slot = slots[N - next];          // fill bottom (slot N-1) first
+          slot.classList.add('filled');
+          slot.textContent = n;
+          next++;
+          if (next > N) { sfx.fanfare?.(); setTimeout(() => { screen.remove(); resolve(); }, 500); }
+        } else {
+          sfx.wrong?.();
+          piece.animate([{ transform: 'translateX(-6px)' }, { transform: 'translateX(6px)' }, { transform: 'translateX(0)' }], { duration: 200 });
+        }
+      };
+      tray.appendChild(piece);
+    }
+    screen.appendChild(tray);
+    document.getElementById('ui').appendChild(screen);
+  });
 }
 
 /* ============================================================
@@ -341,9 +422,26 @@ export async function chapterDawn(game) {
   await ui.fade(true);
   terra.dispose();
 
-  // --- surface finale: the Solari's first dawn ---
+  // --- surface finale: the Solari's first dawn on a living Mars ---
   const scene = await openScene(game, 'marsalive');
   addLuma(scene, 0, 4.5, -6);
+  // a blue lake and green plant tufts make the new world feel alive
+  const lake = new THREE.Mesh(
+    new THREE.CircleGeometry(11, 40),
+    new THREE.MeshStandardMaterial({ color: 0x2f7fb4, emissive: 0x1c5a86, emissiveIntensity: 0.4, roughness: 0.1, metalness: 0.3, transparent: true, opacity: 0.9 })
+  );
+  lake.rotation.x = -Math.PI / 2;
+  lake.position.set(-2, 0.05, -16);
+  scene.scene.add(lake);
+  for (let i = 0; i < 26; i++) {
+    const blade = new THREE.Mesh(
+      new THREE.ConeGeometry(0.18, 0.7 + Math.random() * 0.5, 4),
+      new THREE.MeshStandardMaterial({ color: i % 2 ? 0x4aa860 : 0x6ec878, roughness: 0.8, flatShading: true })
+    );
+    const a = Math.random() * Math.PI * 2, d = 9 + Math.random() * 12;
+    blade.position.set(Math.cos(a) * d, 0.35, Math.sin(a) * d * 0.7 - 2);
+    scene.scene.add(blade);
+  }
   const sola = makeAlien('solari');
   scene.place(sola, -4, -2, { id: 'sola', ry: 0.5 });
   const vega = makeAlien('solari');
