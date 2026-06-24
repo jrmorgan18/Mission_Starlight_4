@@ -164,6 +164,22 @@ const WORLD_RECIPES = {
     heightSpeckle(hctx, w, h, 150, 6, 34, true);
     heightSpeckle(hctx, w, h, 70, 3, 12, false);
   },
+  meadow(ctx, w, h, hctx) {            // reborn-Mars GROUND: grass, flowers, dirt patches
+    const g = ctx.createLinearGradient(0, 0, w, h);
+    g.addColorStop(0, '#4c9a52'); g.addColorStop(0.5, '#3f8a46'); g.addColorStop(1, '#54a85a');
+    ctx.fillStyle = g; ctx.fillRect(0, 0, w, h);
+    speckle(ctx, w, h, '#357a3e', 220, 6, 26, 0.4);    // grass shadow clumps
+    speckle(ctx, w, h, '#7ed080', 200, 4, 16, 0.4);    // grass highlights
+    speckle(ctx, w, h, '#b89a5a', 40, 10, 34, 0.3);    // dirt patches
+    // wildflowers
+    for (const col of ['#ffe45c', '#ff8ad0', '#ffffff', '#9ad0ff']) {
+      ctx.fillStyle = col; ctx.globalAlpha = 0.85;
+      for (let i = 0; i < 70; i++) { ctx.beginPath(); ctx.arc(Math.random() * w, Math.random() * h, 2 + Math.random() * 3, 0, Math.PI * 2); ctx.fill(); }
+    }
+    ctx.globalAlpha = 1;
+    hctx.fillStyle = '#808080'; hctx.fillRect(0, 0, w, h);
+    heightSpeckle(hctx, w, h, 120, 5, 20, true);
+  },
   marsalive(ctx, w, h, hctx) {         // Mars terraformed — a living world: oceans, green
                                        // continents with coastlines, rivers, lakes, ice caps
     // deep ocean
@@ -331,6 +347,67 @@ export function makeNebulaCloud(color = 0x6a4a9e, count = 14, spread = 60) {
     group.add(s);
   }
   return group;
+}
+
+/* ---------------- living-world landscape (reborn Mars) ---------------- */
+
+/** A gradient sky dome (sits behind everything; ignores fog). */
+export function makeSkyDome(top = 0x6fb8e8, bottom = 0xcfeaf6, radius = 240) {
+  const geo = new THREE.SphereGeometry(radius, 32, 18);
+  const top3 = new THREE.Color(top), bot3 = new THREE.Color(bottom);
+  const colors = new Float32Array(geo.attributes.position.count * 3);
+  const pos = geo.attributes.position;
+  for (let i = 0; i < pos.count; i++) {
+    const k = THREE.MathUtils.clamp((pos.getY(i) / radius) * 0.5 + 0.5, 0, 1);
+    const c = bot3.clone().lerp(top3, k);
+    colors.set([c.r, c.g, c.b], i * 3);
+  }
+  geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+  return new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.BackSide, fog: false, depthWrite: false }));
+}
+
+/** A simple low-poly tree: trunk + stacked foliage cones. */
+export function makeTree(scale = 1) {
+  const t = new THREE.Group();
+  const trunk = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.12, 0.18, 1.1, 7),
+    new THREE.MeshStandardMaterial({ color: 0x6b4a2c, roughness: 0.9, flatShading: true })
+  );
+  trunk.position.y = 0.55;
+  t.add(trunk);
+  const leaf = (r, y, col) => {
+    const m = new THREE.Mesh(new THREE.ConeGeometry(r, r * 1.5, 8), new THREE.MeshStandardMaterial({ color: col, roughness: 0.8, flatShading: true }));
+    m.position.y = y;
+    t.add(m);
+  };
+  leaf(0.95, 1.5, 0x357a3e);
+  leaf(0.78, 2.05, 0x3f8c48);
+  leaf(0.55, 2.5, 0x4fa257);
+  t.scale.setScalar(scale);
+  t.userData.bobs = false;
+  return t;
+}
+
+/** Dense instanced grass blades scattered in a ring; one draw call. */
+export function makeGrassField(count = 500, inner = 5, outer = 26) {
+  const blade = new THREE.ConeGeometry(0.06, 0.5, 3);
+  blade.translate(0, 0.25, 0);
+  const mat = new THREE.MeshStandardMaterial({ roughness: 0.9, flatShading: true });
+  const mesh = new THREE.InstancedMesh(blade, mat, count);
+  const dummy = new THREE.Object3D();
+  const greens = [new THREE.Color(0x4aa860), new THREE.Color(0x6ec878), new THREE.Color(0x3d8c4a), new THREE.Color(0x86d68a)];
+  for (let i = 0; i < count; i++) {
+    const a = Math.random() * Math.PI * 2;
+    const d = inner + Math.random() * (outer - inner);
+    dummy.position.set(Math.cos(a) * d, 0, Math.sin(a) * d * 0.8 - 2);
+    dummy.rotation.set((Math.random() - 0.5) * 0.3, Math.random() * Math.PI, (Math.random() - 0.5) * 0.3);
+    dummy.scale.setScalar(0.7 + Math.random() * 1.1);
+    dummy.updateMatrix();
+    mesh.setMatrixAt(i, dummy.matrix);
+    mesh.setColorAt(i, greens[Math.floor(Math.random() * greens.length)]);
+  }
+  mesh.instanceMatrix.needsUpdate = true;
+  return mesh;
 }
 
 /* ---------------- the player's ship (Mk II) ---------------- */
@@ -724,7 +801,7 @@ export function makeLighthouse(height = 7) {
 
 const GROUND_KEYS = { planet9: 'planet9', proxima: 'proxima', trappist: 'trappist', cancri: 'cancri', pulsar: 'station', finale: 'nebula', blackhole: 'station',
   veyra: 'veyra', observatory: 'station', spaceport: 'station', harbor: 'harbor', race: 'station',
-  marsred: 'marsred', marscanyon: 'marsred', marspolar: 'marsred', marsalive: 'marsalive' };
+  marsred: 'marsred', marscanyon: 'marsred', marspolar: 'marsred', marsalive: 'meadow' };
 
 export function makeGround(key, size = 60) {
   const geo = new THREE.PlaneGeometry(size, size, 48, 48);

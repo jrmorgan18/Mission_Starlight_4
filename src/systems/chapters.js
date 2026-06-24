@@ -5,9 +5,10 @@
 import * as THREE from 'three';
 import { WorldScene } from './worldScene.js';
 import { collectParts, boulderHunt, animate } from './minigames.js';
+import { keystoneJigsaw } from './jigsaw.js';
 import { CaveScene } from '../cave/caveScene.js';
 import { TerraformScene, makeSolarWind } from '../mars/showpieces.js';
-import { makeAlien, makeLuma, makeRover, makeRock, makeCrystal, makeShip, makeGlowSprite, makePlanet } from '../world/builders.js';
+import { makeAlien, makeLuma, makeRover, makeRock, makeCrystal, makeShip, makeGlowSprite, makePlanet, makeTree, makeGrassField, makeSkyDome } from '../world/builders.js';
 import * as ui from '../ui/ui.js';
 import { pickMath, pickScience, pickReading } from '../edu/engine.js';
 import { loadSave } from '../save.js';
@@ -308,9 +309,9 @@ export async function chapterKeystone(game) {
 
   // STAGE 1: fit the keystone pieces together (sequencing puzzle)
   await ui.dialogue([
-    { who: 'rusty', text: 'Fit the pieces in order, bottom to top — follow the numbers to build the arch!' }
+    { who: 'rusty', text: 'The pieces are scattered everywhere! Drag each one into the frame — make the carved runes line up so they fit together.' }
   ]);
-  await keystonePuzzle();
+  await keystoneJigsaw({ cols: 4, rows: 2 });
   rune.material.emissiveIntensity = 1;
   sfx.fanfare?.();
 
@@ -346,105 +347,6 @@ export async function chapterKeystone(game) {
   await closeScene(game, scene);
 }
 
-/** Fit the Keystone back together: DRAG each carved fragment into its matching
- *  socket on the tablet (match by colour + rune). Snaps when dropped close;
- *  bounces back otherwise. Window-tracked pointers so it works on iPad. */
-function keystonePuzzle() {
-  return new Promise((resolve) => {
-    const FRAG = [
-      { glyph: '✦', color: '#e8884a' }, { glyph: '◆', color: '#5cc8e8' }, { glyph: '▲', color: '#8ad06a' },
-      { glyph: '☼', color: '#e8c44a' }, { glyph: '◉', color: '#c98ae0' }, { glyph: '❖', color: '#e87a7a' }
-    ];
-    const COLS = 3, ROWS = 2, CW = 100, CH = 84, PW = CW - 10, PH = CH - 10, OX = 18, OY = 12;
-    const trayY = OY + ROWS * CH + 22;
-
-    const screen = document.createElement('div');
-    screen.className = 'screen dim';
-    screen.style.zIndex = 65;
-    screen.innerHTML = '<div class="ks-title">🧩 Drag each piece into its matching socket!</div>';
-    const board = document.createElement('div');
-    board.className = 'ks2-board';
-    screen.appendChild(board);
-
-    const slots = [];
-    for (let i = 0; i < 6; i++) {
-      const c = i % COLS, r = Math.floor(i / COLS);
-      const slot = document.createElement('div');
-      slot.className = 'ks2-slot';
-      slot.style.cssText = `left:${OX + c * CW}px;top:${OY + r * CH}px;width:${PW}px;height:${PH}px;color:${FRAG[i].color};`;
-      slot.textContent = FRAG[i].glyph;
-      board.appendChild(slot);
-      slots.push({ filled: false, cx: OX + c * CW + PW / 2, cy: OY + r * CH + PH / 2 });
-    }
-
-    const pieces = [];
-    let placed = 0;
-    const order = [...Array(6).keys()].sort(() => Math.random() - 0.5);
-    order.forEach((target, pos) => {
-      const f = FRAG[target];
-      const homeX = OX + (pos % COLS) * CW, homeY = trayY + Math.floor(pos / COLS) * CH;
-      const piece = document.createElement('div');
-      piece.className = 'ks2-piece';
-      piece.textContent = f.glyph;
-      piece.style.cssText = `left:${homeX}px;top:${homeY}px;width:${PW}px;height:${PH}px;background:${f.color};`;
-      piece.dataset.target = target;
-      board.appendChild(piece);
-      pieces.push({ el: piece, target, homeX, homeY, locked: false });
-    });
-
-    let drag = null, offX = 0, offY = 0;
-    const rect = () => board.getBoundingClientRect();
-    const onMove = (e) => {
-      if (!drag) return;
-      e.preventDefault();
-      const r = rect();
-      drag.el.style.left = `${e.clientX - r.left - offX}px`;
-      drag.el.style.top = `${e.clientY - r.top - offY}px`;
-    };
-    const place = (obj) => {
-      const slot = slots[obj.target];
-      obj.el.style.left = `${slot.cx - PW / 2}px`;
-      obj.el.style.top = `${slot.cy - PH / 2}px`;
-      obj.locked = true; slot.filled = true;
-      obj.el.classList.add('locked');
-      placed++;
-      if (placed === 6) { cleanup(); sfx.fanfare?.(); setTimeout(() => { screen.remove(); resolve(); }, 550); }
-    };
-    const onUp = () => {
-      if (!drag) return;
-      const obj = drag; drag = null;
-      obj.el.classList.remove('drag');
-      const slot = slots[obj.target];
-      const px = parseFloat(obj.el.style.left) + PW / 2, py = parseFloat(obj.el.style.top) + PH / 2;
-      if (!slot.filled && Math.hypot(px - slot.cx, py - slot.cy) < 56) { sfx.collect?.(); place(obj); }
-      else { obj.el.style.left = `${obj.homeX}px`; obj.el.style.top = `${obj.homeY}px`; sfx.tap?.(); }
-    };
-    for (const obj of pieces) {
-      obj.el.addEventListener('pointerdown', (e) => {
-        if (obj.locked) return;
-        e.preventDefault();
-        drag = obj; obj.el.classList.add('drag');
-        const r = rect();
-        offX = e.clientX - (r.left + parseFloat(obj.el.style.left));
-        offY = e.clientY - (r.top + parseFloat(obj.el.style.top));
-      }, { passive: false });
-    }
-    window.addEventListener('pointermove', onMove, { passive: false });
-    window.addEventListener('pointerup', onUp);
-    window.addEventListener('pointercancel', onUp);
-    const cleanup = () => {
-      window.removeEventListener('pointermove', onMove);
-      window.removeEventListener('pointerup', onUp);
-      window.removeEventListener('pointercancel', onUp);
-      window.__ksSolve = undefined;
-    };
-    // test hook: snap every remaining piece home
-    window.__ksSolve = () => { for (const obj of pieces) if (!obj.locked) place(obj); };
-
-    document.getElementById('ui').appendChild(screen);
-  });
-}
-
 /* ============================================================
    CHAPTER 6 — A NEW DAWN (terraform showpiece + cliffhanger)
 ============================================================ */
@@ -469,25 +371,53 @@ export async function chapterDawn(game) {
   await ui.fade(true);
   terra.dispose();
 
-  // --- surface finale: the Solari's first dawn on a living Mars ---
+  // --- surface finale: a lush, living Mars landscape ---
   const scene = await openScene(game, 'marsalive');
-  addLuma(scene, 0, 4.5, -6);
-  // a blue lake and green plant tufts make the new world feel alive
-  const lake = new THREE.Mesh(
-    new THREE.CircleGeometry(11, 40),
-    new THREE.MeshStandardMaterial({ color: 0x2f7fb4, emissive: 0x1c5a86, emissiveIntensity: 0.4, roughness: 0.1, metalness: 0.3, transparent: true, opacity: 0.9 })
-  );
+  // daytime sky: hide the space starfield, brighten the air, add a gradient dome
+  scene.scene.traverse((o) => { if (o.isPoints) o.visible = false; });
+  scene.scene.background = new THREE.Color(0x9fcfe8);
+  if (scene.scene.fog) { scene.scene.fog.color.set(0xbfe2f0); scene.scene.fog.near = 36; scene.scene.fog.far = 120; }
+  scene.scene.add(new THREE.HemisphereLight(0xbfe6ff, 0x3f7a44, 1.2));   // sky/grass bounce
+  const sky = makeSkyDome(0x4f9fe0, 0xd6effa, 220);
+  scene.scene.add(sky);
+
+  addLuma(scene, 7, 4.5, 2);
+
+  // a reflective lake with gently rippling water
+  const lakeGeo = new THREE.PlaneGeometry(30, 22, 28, 20);
+  const lake = new THREE.Mesh(lakeGeo, new THREE.MeshStandardMaterial({
+    color: 0x2f86c0, emissive: 0x1d5e92, emissiveIntensity: 0.35, roughness: 0.08, metalness: 0.5, transparent: true, opacity: 0.92
+  }));
   lake.rotation.x = -Math.PI / 2;
-  lake.position.set(-2, 0.05, -16);
+  lake.position.set(-3, 0.06, -20);
+  const base = lakeGeo.attributes.position.array.slice();
+  lake.userData.update = (dt, t) => {
+    const p = lakeGeo.attributes.position;
+    for (let i = 0; i < p.count; i++) {
+      const ox = base[i * 3], oy = base[i * 3 + 1];
+      p.setZ(i, Math.sin(ox * 0.5 + t * 1.6) * 0.12 + Math.cos(oy * 0.6 + t * 1.2) * 0.12);
+    }
+    p.needsUpdate = true;
+  };
   scene.scene.add(lake);
-  for (let i = 0; i < 26; i++) {
-    const blade = new THREE.Mesh(
-      new THREE.ConeGeometry(0.18, 0.7 + Math.random() * 0.5, 4),
-      new THREE.MeshStandardMaterial({ color: i % 2 ? 0x4aa860 : 0x6ec878, roughness: 0.8, flatShading: true })
+
+  // dense grass + trees + distant mountains
+  scene.scene.add(makeGrassField(game.lowDetail ? 220 : 520, 5, 28));
+  for (let i = 0; i < (game.lowDetail ? 7 : 12); i++) {
+    const a = Math.random() * Math.PI * 2, d = 10 + Math.random() * 14;
+    const tree = makeTree(0.8 + Math.random() * 0.7);
+    tree.position.set(Math.cos(a) * d, 0, Math.sin(a) * d * 0.7 - 2);
+    if (Math.hypot(tree.position.x + 3, tree.position.z + 20) > 11) scene.scene.add(tree);   // keep the lake clear
+  }
+  for (let i = 0; i < 7; i++) {
+    const m = new THREE.Mesh(
+      new THREE.ConeGeometry(10 + Math.random() * 6, 12 + Math.random() * 8, 5),
+      new THREE.MeshStandardMaterial({ color: 0x7a4a3a, roughness: 1, flatShading: true })
     );
-    const a = Math.random() * Math.PI * 2, d = 9 + Math.random() * 12;
-    blade.position.set(Math.cos(a) * d, 0.35, Math.sin(a) * d * 0.7 - 2);
-    scene.scene.add(blade);
+    m.position.set((i - 3) * 22 + 6, 3, -70 - Math.random() * 10);
+    const cap = new THREE.Mesh(new THREE.ConeGeometry(4.5, 5, 5), new THREE.MeshStandardMaterial({ color: 0xeef6ff, roughness: 0.8, flatShading: true }));
+    cap.position.set(m.position.x, m.position.y + 6, m.position.z);
+    scene.scene.add(m, cap);
   }
   const sola = makeAlien('solari');
   scene.place(sola, -4, -2, { id: 'sola', ry: 0.5 });

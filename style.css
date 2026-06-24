@@ -662,20 +662,15 @@ button { font-family: var(--font); cursor: pointer; border: none; }
 
 /* ---------- Keystone drag-to-fit puzzle ---------- */
 .ks-title { font-size: clamp(18px, 3.4vw, 26px); font-weight: 900; color: #ffd95c; text-shadow: 0 0 14px rgba(255,217,92,0.5); text-align: center; margin-bottom: 4px; }
-.ks2-board { position: relative; width: 336px; height: 396px; margin: 4px auto; touch-action: none; }
-.ks2-slot {
-  position: absolute; border: 2px dashed rgba(150,130,210,0.55); border-radius: 12px;
-  background: rgba(30,24,54,0.45); display: flex; align-items: center; justify-content: center;
-  font-size: 30px; font-weight: 900; opacity: 0.45;
+.jig-board { position: relative; margin: 4px auto; touch-action: none; }
+.jig-ghost {
+  position: absolute; opacity: 0.18; border-radius: 8px;
+  background-size: cover; filter: grayscale(0.3);
+  border: 2px dashed rgba(255,217,92,0.5);
 }
-.ks2-piece {
-  position: absolute; border-radius: 12px; border: 2px solid rgba(255,255,255,0.45);
-  display: flex; align-items: center; justify-content: center;
-  font-size: 32px; font-weight: 900; color: rgba(20,12,6,0.7);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.5); touch-action: none; cursor: grab;
-}
-.ks2-piece.drag { z-index: 6; transform: scale(1.06); box-shadow: 0 10px 22px rgba(0,0,0,0.6); cursor: grabbing; }
-.ks2-piece.locked { border-color: #5ce8ff; box-shadow: 0 0 16px rgba(92,232,255,0.7); }
+.jig-piece { position: absolute; touch-action: none; cursor: grab; }
+.jig-piece.drag { cursor: grabbing; filter: drop-shadow(0 8px 14px rgba(0,0,0,0.6)); }
+.jig-piece.locked { filter: drop-shadow(0 0 8px rgba(92,232,255,0.7)); }
 
 /* ---------- Phase-A slice: killer-star showpiece ---------- */
 #slice-fps {
