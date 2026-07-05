@@ -4,11 +4,11 @@
 // marks REAL SCIENCE vs STORY MAGIC.
 import * as THREE from 'three';
 import { WorldScene } from './worldScene.js';
-import { collectParts, boulderHunt, animate } from './minigames.js';
+import { collectParts, boulderHunt, tapAny, programRover, windBlock, animate } from './minigames.js';
 import { keystoneJigsaw } from './jigsaw.js';
 import { CaveScene } from '../cave/caveScene.js';
 import { TerraformScene, makeSolarWind } from '../mars/showpieces.js';
-import { makeAlien, makeLuma, makeRover, makeRock, makeCrystal, makeShip, makeGlowSprite, makePlanet, makeTree, makeGrassField, makeSkyDome } from '../world/builders.js';
+import { makeAlien, makeLuma, makeRover, makeRock, makeCrystal, makeShip, makeGlowSprite, makePlanet, makeTree, makeGrassField, makeSkyDome, makeShootingStar } from '../world/builders.js';
 import * as ui from '../ui/ui.js';
 import { pickMath, pickScience, pickReading } from '../edu/engine.js';
 import { loadSave } from '../save.js';
@@ -59,9 +59,103 @@ function addLuma(scene, x, y, z) {
 
 async function openScene(game, key) {
   const scene = new WorldScene(game, key);
+  dressMars(scene, key);
   game.setScene(scene);
   await ui.fade(false);
   return scene;
+}
+
+/** Set-dress the dead-Mars sites so each feels like a real, distinct place:
+ *  a small far Sun, Phobos & Deimos drifting overhead (real science!), distant
+ *  landforms ringing the horizon, and the occasional shooting star. */
+function dressMars(scene, key) {
+  if (!['marsred', 'marscanyon', 'marspolar'].includes(key)) return;
+  const S = scene.scene;
+  const flat = new THREE.MeshStandardMaterial({ color: 0x6a3018, roughness: 1, flatShading: true });
+
+  // the Sun, small and far (Mars gets less sunlight than Earth)
+  const sun = makeGlowSprite(0xffe8c0, 12);
+  sun.position.set(20, 22, -60);
+  S.add(sun);
+
+  // Phobos & Deimos, Mars's two little potato moons, drifting across the sky
+  for (const [size, y, speed, phase] of [[1.0, 26, 0.05, 0], [0.6, 31, 0.075, 2.6]]) {
+    const moon = new THREE.Mesh(
+      new THREE.IcosahedronGeometry(size, 0),
+      new THREE.MeshStandardMaterial({ color: 0x9a8878, roughness: 1, flatShading: true })
+    );
+    moon.userData.update = (dt, t) => {
+      const a = t * speed + phase;
+      moon.position.set(Math.cos(a) * 46, y + Math.sin(a * 1.7) * 2, -42 + Math.sin(a) * 12);
+      moon.rotation.y += dt * 0.3;
+    };
+    S.add(moon);
+  }
+
+  // shooting stars — rare, magical, worth pointing at
+  S.add(makeShootingStar());
+  S.add(makeShootingStar());
+
+  if (key === 'marsred') {
+    // flat-topped mesas ringing the horizon + soft dunes
+    for (let i = 0; i < 8; i++) {
+      const a = (i / 8) * Math.PI * 2 + 0.35;
+      if (Math.abs(Math.sin(a)) < 0.25 && Math.cos(a) > 0) continue;   // keep the camera lane open
+      const h = 7 + Math.random() * 7, r = 5 + Math.random() * 4;
+      const mesa = new THREE.Mesh(new THREE.CylinderGeometry(r * 0.8, r, h, 7), flat.clone());
+      mesa.material.color.offsetHSL(0, 0, (Math.random() - 0.5) * 0.06);
+      mesa.position.set(Math.cos(a) * 48, h / 2 - 2, Math.sin(a) * 44 - 6);
+      S.add(mesa);
+    }
+    for (let i = 0; i < 5; i++) {
+      const dune = new THREE.Mesh(new THREE.SphereGeometry(6 + Math.random() * 4, 10, 6), new THREE.MeshStandardMaterial({ color: 0xb06438, roughness: 1 }));
+      dune.scale.y = 0.22;
+      const a = Math.random() * Math.PI * 2;
+      dune.position.set(Math.cos(a) * 34, -1.4, Math.sin(a) * 30 - 8);
+      S.add(dune);
+    }
+  } else if (key === 'marscanyon') {
+    // layered canyon walls closing in on two sides, like standing in Valles Marineris
+    for (let i = 0; i < 9; i++) {
+      const side = i % 2 ? 1 : -1;
+      const h = 10 + Math.random() * 8, w = 10 + Math.random() * 6;
+      const wall = new THREE.Mesh(new THREE.BoxGeometry(w, h, 4), new THREE.MeshStandardMaterial({
+        color: i % 3 === 0 ? 0x8a4a28 : (i % 3 === 1 ? 0xa05830 : 0x74381e), roughness: 1, flatShading: true
+      }));
+      wall.position.set(side * (26 + Math.random() * 10), h / 2 - 2, -14 - i * 4.5);
+      wall.rotation.y = side * (0.3 + Math.random() * 0.3);
+      S.add(wall);
+    }
+    // a wind-carved rock arch on the horizon
+    const arch = new THREE.Group();
+    const legL = new THREE.Mesh(new THREE.CylinderGeometry(1.4, 2, 9, 6), flat.clone());
+    const legR = legL.clone(); legL.position.x = -4; legR.position.x = 4;
+    const top = new THREE.Mesh(new THREE.CylinderGeometry(1.3, 1.3, 11, 6), flat.clone());
+    top.rotation.z = Math.PI / 2; top.position.y = 4.5;
+    arch.add(legL, legR, top);
+    arch.position.set(-6, 2.5, -40);
+    S.add(arch);
+  } else if (key === 'marspolar') {
+    // glittering ice spires + frost mounds around the polar site
+    for (let i = 0; i < 9; i++) {
+      const a = (i / 9) * Math.PI * 2 + 0.6;
+      if (Math.abs(Math.sin(a)) < 0.22 && Math.cos(a) > 0) continue;
+      const h = 5 + Math.random() * 6;
+      const spire = new THREE.Mesh(new THREE.ConeGeometry(1.2 + Math.random(), h, 5), new THREE.MeshStandardMaterial({
+        color: 0xdfeaff, roughness: 0.25, metalness: 0.1, emissive: 0x4a5a8a, emissiveIntensity: 0.25, flatShading: true
+      }));
+      spire.position.set(Math.cos(a) * (30 + Math.random() * 12), h / 2 - 1.5, Math.sin(a) * 28 - 8);
+      spire.rotation.y = Math.random() * Math.PI;
+      S.add(spire);
+    }
+    for (let i = 0; i < 6; i++) {
+      const mound = new THREE.Mesh(new THREE.SphereGeometry(3 + Math.random() * 3, 10, 6), new THREE.MeshStandardMaterial({ color: 0xe8f0ff, roughness: 0.6 }));
+      mound.scale.y = 0.3;
+      const a = Math.random() * Math.PI * 2;
+      mound.position.set(Math.cos(a) * 26, -0.7, Math.sin(a) * 24 - 6);
+      S.add(mound);
+    }
+  }
 }
 
 async function closeScene(game, scene) {
@@ -103,6 +197,15 @@ export async function chapterWelcome(game) {
     { who: 'player', text: 'Together, Rusty. Let\'s figure out how to wake your planet up.' }
   ]);
   await ui.giveCard('rusty');
+
+  // Rusty's wheels are stiff — program him a route (a first taste of coding)
+  await ui.dialogue([
+    { who: 'rusty', text: 'Oh! But my old wheels only follow PROGRAMS now. Tap the arrows to write my route, then press RUN — I\'ll show you my favorite shiny stone!' }
+  ]);
+  await programRover();
+  await ui.dialogue([
+    { who: 'rusty', text: 'Wheee! A perfect program! You drive better than mission control ever did. Beep beep!' }
+  ]);
 
   await askReadingSet('welcome', 2);
   await askScience('mars');
@@ -202,7 +305,11 @@ export async function chapterDeath(game) {
     await askMath('addition', { label: `SHIELD POWER ${i + 1} OF 2`, icon: '🧲', gauge: { current: i, total: 2, icon: '🛡️' } });
   }
   await ui.dialogue([
-    { who: 'bolt', text: 'Generator charged! Now — RAISE THE SHIELD and watch what it does to the solar wind!' }
+    { who: 'bolt', text: 'Generator charged! But it needs a minute to warm up — and the wind never stops. Block those gusts by HAND while we wait, Cadet!' }
+  ]);
+  await windBlock(game.lowDetail ? 6 : 8);
+  await ui.dialogue([
+    { who: 'rusty', text: 'Phew — nice blocking! Now you FEEL how hard the wind pushes, day after day, for a billion years. Generator\'s ready. Do the honors!' }
   ]);
   await raiseShieldMoment(wind);
   await ui.dialogue([
@@ -433,6 +540,53 @@ export async function chapterDawn(game) {
   ]);
   await ui.giveCard('vega');
   await ui.giveCard('luma');
+
+  // --- plant the first garden: a joyful, no-fail celebration ---
+  await ui.dialogue([
+    { who: 'sola', text: 'On Veyra, the first family in a new home plants the first garden. Cadet... will you plant ours with us?' }
+  ]);
+  const seedIds = [];
+  for (let i = 0; i < 5; i++) {
+    const g = new THREE.Group();
+    const seed = new THREE.Mesh(
+      new THREE.SphereGeometry(0.35, 10, 8),
+      new THREE.MeshStandardMaterial({ color: 0x8a6a3a, emissive: 0xffd95c, emissiveIntensity: 0.9, roughness: 0.6 })
+    );
+    seed.position.y = 0.3;
+    g.add(seed);
+    const a = (i / 5) * Math.PI * 2 + 0.5;
+    const id = `seed${i}`;
+    scene.place(g, Math.cos(a) * 6.5, Math.sin(a) * 4.5 - 1, { id });
+    seedIds.push(id);
+  }
+  ui.setObjective('🌱 Tap each glowing spot to plant the first garden!');
+  let remainingSeeds = [...seedIds];
+  let planted = 0;
+  while (remainingSeeds.length) {
+    const id = await tapAny(scene, remainingSeeds);
+    remainingSeeds = remainingSeeds.filter((x) => x !== id);
+    const item = scene.interactives.get(id);
+    scene.clearMarker(id);
+    scene.interactives.delete(id);
+    const spot = item.obj.position.clone();
+    scene.scene.remove(item.obj);
+    sfx.collect?.();
+    // sprout! a tree or flower bush bursts up with a sparkle
+    planted++;
+    const sprout = planted % 2 ? makeTree(0.55 + Math.random() * 0.4) : makeFlowerPatch();
+    sprout.position.set(spot.x, 0, spot.z);
+    sprout.scale.setScalar(0.01);
+    scene.scene.add(sprout);
+    const spark = makeGlowSprite(0xaef2b0, 3);
+    spark.position.set(spot.x, 1.2, spot.z);
+    scene.scene.add(spark);
+    await animate(500, (k) => { sprout.scale.setScalar(0.01 + k * 0.99); spark.material.opacity = 1 - k; });
+    scene.scene.remove(spark);
+  }
+  ui.setObjective('');
+  sfx.fanfare?.();
+  ui.toast('🌸 The first garden of new Mars is planted!', true);
+
   await askReadingSet('dawn', 2);
   await askScience('mars');
 
@@ -449,6 +603,26 @@ export async function chapterDawn(game) {
   await closeScene(game, scene);
 
   await toBeContinued();
+}
+
+/** A little flowering bush for the first-garden celebration. */
+function makeFlowerPatch() {
+  const g = new THREE.Group();
+  const bush = new THREE.Mesh(new THREE.SphereGeometry(0.55, 10, 8), new THREE.MeshStandardMaterial({ color: 0x3f8a46, roughness: 1 }));
+  bush.position.y = 0.4;
+  bush.scale.y = 0.75;
+  g.add(bush);
+  const cols = [0xffe45c, 0xff8ad0, 0xffffff, 0x9ad0ff];
+  for (let i = 0; i < 6; i++) {
+    const f = new THREE.Mesh(
+      new THREE.SphereGeometry(0.12, 6, 5),
+      new THREE.MeshStandardMaterial({ color: cols[i % 4], emissive: cols[i % 4], emissiveIntensity: 0.35 })
+    );
+    const a = Math.random() * Math.PI * 2;
+    f.position.set(Math.cos(a) * 0.4, 0.62 + Math.random() * 0.25, Math.sin(a) * 0.4);
+    g.add(f);
+  }
+  return g;
 }
 
 /** A dramatic "TO BE CONTINUED" stinger into game 5. */

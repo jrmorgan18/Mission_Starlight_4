@@ -909,6 +909,40 @@ export function addSceneLights(scene, { sky = 0x8899ff, ground = 0x223344, sunCo
   return sun;
 }
 
+/** A shooting star that occasionally streaks across the sky (userData.update). */
+export function makeShootingStar() {
+  const g = new THREE.Group();
+  const head = makeGlowSprite(0xffffff, 2.2);
+  const trail = makeGlowSprite(0xbfe8ff, 1);
+  trail.scale.set(7, 0.7, 1);
+  g.add(trail, head);
+  g.visible = false;
+  let idle = 2 + Math.random() * 6, run = 0;
+  const from = new THREE.Vector3(), dir = new THREE.Vector3();
+  g.userData.update = (dt) => {
+    if (!g.visible) {
+      idle -= dt;
+      if (idle <= 0) {
+        from.set(-60 + Math.random() * 30, 26 + Math.random() * 14, -70 + Math.random() * 20);
+        dir.set(1, -0.2 - Math.random() * 0.25, 0).normalize();
+        if (Math.random() < 0.5) { from.x = -from.x; dir.x = -dir.x; }
+        run = 0;
+        g.visible = true;
+      }
+      return;
+    }
+    run += dt;
+    const k = run / 0.9;
+    if (k >= 1) { g.visible = false; idle = 4 + Math.random() * 7; return; }
+    g.position.copy(from).addScaledVector(dir, k * 55);
+    const fade = Math.sin(Math.min(1, k) * Math.PI);
+    head.material.opacity = fade;
+    trail.material.opacity = fade * 0.7;
+    trail.position.copy(dir).multiplyScalar(-3.2);
+  };
+  return g;
+}
+
 /** Animate userData.bobs / spins / orbits / pendulums on a scene graph. Call every frame. */
 export function animateProps(root, t) {
   root.traverse((obj) => {

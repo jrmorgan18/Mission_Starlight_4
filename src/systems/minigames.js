@@ -552,6 +552,182 @@ export async function boulderHunt(scene, boulderIds, needed) {
   sfx.fanfare?.();
 }
 
+/* ============ Drive Rusty (path programming) ============
+   Write Rusty a driving program — tap arrow commands to queue a route — then
+   RUN to send the rover across the grid. Two routes, the second with boulders
+   to steer around. A real coding/sequencing puzzle; wrong path just resets. */
+const PR_DIRS = {
+  right: { dc: 1, dr: 0, icon: '➡️' }, up: { dc: 0, dr: -1, icon: '⬆️' },
+  down: { dc: 0, dr: 1, icon: '⬇️' }, left: { dc: -1, dr: 0, icon: '⬅️' }
+};
+const PR_LEVELS = [
+  { cols: 4, rows: 3, start: { c: 0, r: 2 }, goal: { c: 3, r: 0 }, walls: [], dirs: ['right', 'up'],
+    solution: ['right', 'right', 'right', 'up', 'up'] },
+  { cols: 5, rows: 4, start: { c: 0, r: 2 }, goal: { c: 4, r: 1 }, walls: [{ c: 2, r: 1 }, { c: 2, r: 2 }], dirs: ['right', 'up', 'down'],
+    solution: ['right', 'down', 'right', 'right', 'up', 'right', 'up'] }
+];
+
+function prLevel(cfg, n, total) {
+  return new Promise((resolve) => {
+    const { cols, rows, start, goal, walls, dirs, solution } = cfg;
+    const isWall = (c, r) => walls.some((w) => w.c === c && w.r === r);
+    let pos = { ...start }, queue = [], running = false;
+    const cellPx = cols >= 5 ? 54 : 64;
+
+    const wrap = document.createElement('div');
+    wrap.className = 'screen dim';
+    wrap.id = 'program-game';
+    wrap.innerHTML =
+      `<div class="pg-round">Route ${n} of ${total}${n === total ? ' — boulders ahead!' : ''}</div>` +
+      '<div class="pg-title">🛞 Program Rusty\'s route to the shiny stone, then RUN!</div>' +
+      '<div class="pg-grid"></div>' +
+      '<div class="pg-queue"></div>' +
+      '<div class="pg-cmds">' +
+      dirs.map((d) => `<button class="pg-cmd" data-d="${d}">${PR_DIRS[d].icon}</button>`).join('') +
+      '<button class="pg-run">▶ RUN</button><button class="pg-clear">↺</button>' +
+      '</div>';
+    document.getElementById('ui').appendChild(wrap);
+    const grid = wrap.querySelector('.pg-grid');
+    const qEl = wrap.querySelector('.pg-queue');
+    grid.style.gridTemplateColumns = `repeat(${cols}, ${cellPx}px)`;
+    grid.style.gridTemplateRows = `repeat(${rows}, ${cellPx}px)`;
+
+    const cells = [];
+    for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+      const cell = document.createElement('div');
+      cell.className = 'pg-cell';
+      cell.style.width = cell.style.height = `${cellPx}px`;
+      cell.style.fontSize = `${Math.round(cellPx * 0.5)}px`;
+      if (c === goal.c && r === goal.r) cell.classList.add('goal');
+      if (isWall(c, r)) cell.classList.add('wall');
+      grid.appendChild(cell);
+      cells.push(cell);
+    }
+    const draw = () => {
+      cells.forEach((cell, i) => {
+        const c = i % cols, r = Math.floor(i / cols);
+        cell.textContent = isWall(c, r) ? '🪨' : (c === goal.c && r === goal.r) ? '💎' : '';
+        if (c === pos.c && r === pos.r) cell.textContent = '🛻';
+      });
+      qEl.innerHTML = '';
+      for (const d of queue) { const chip = document.createElement('span'); chip.className = 'pg-chip'; chip.textContent = PR_DIRS[d].icon; qEl.appendChild(chip); }
+    };
+    draw();
+
+    const finish = () => { sfx.fanfare?.(); wrap.remove(); window.__programSolve = undefined; resolve(); };
+
+    const run = async () => {
+      if (running || !queue.length) return;
+      running = true;
+      pos = { ...start }; draw();
+      for (const d of queue) {
+        const nc = pos.c + PR_DIRS[d].dc, nr = pos.r + PR_DIRS[d].dr;
+        if (nc >= 0 && nc < cols && nr >= 0 && nr < rows && !isWall(nc, nr)) { pos.c = nc; pos.r = nr; }
+        sfx.tap?.(); draw();
+        await animate(300, () => {});
+      }
+      if (pos.c === goal.c && pos.r === goal.r) { sfx.shard?.(); setTimeout(finish, 350); }
+      else { sfx.bump?.(); wrap.querySelector('.pg-title').textContent = 'Beep! Not at the stone — try again!'; queue = []; pos = { ...start }; setTimeout(() => { draw(); running = false; }, 600); }
+    };
+
+    wrap.querySelectorAll('.pg-cmd').forEach((b) => b.onclick = () => { if (running) return; queue.push(b.dataset.d); sfx.tap?.(); draw(); });
+    wrap.querySelector('.pg-clear').onclick = () => { if (running) return; queue = []; pos = { ...start }; sfx.tap?.(); draw(); };
+    wrap.querySelector('.pg-run').onclick = run;
+    window.__programSolve = () => { queue = [...solution]; run(); };   // test hook
+  });
+}
+
+export async function programRover() {
+  for (let i = 0; i < PR_LEVELS.length; i++) await prLevel(PR_LEVELS[i], i + 1, PR_LEVELS.length);
+}
+
+/* ============ Block the Solar Wind ============
+   Gold solar-wind gusts stream down toward little Mars — tap each one to
+   deflect it before it hits! Gusts that get through just puff (no fail);
+   block the target number to win. A reaction game with real science inside. */
+export function windBlock(target = 8) {
+  return new Promise((resolve) => {
+    const wrap = document.createElement('div');
+    wrap.className = 'screen dim';
+    wrap.id = 'wind-game';
+    wrap.innerHTML =
+      '<div class="wb-title">🧲 Block the solar wind! Tap the gusts before they hit Mars!</div>' +
+      '<div class="wb-field"><div class="wb-mars">🔴</div></div>' +
+      '<div class="wb-bar"><div class="wb-fill"></div></div>';
+    document.getElementById('ui').appendChild(wrap);
+    const field = wrap.querySelector('.wb-field');
+    const mars = wrap.querySelector('.wb-mars');
+    const fill = wrap.querySelector('.wb-fill');
+
+    let blocked = 0, done = false, raf = 0, last = performance.now(), spawnIn = 0.3;
+    const gusts = new Set();
+    const render = () => { fill.style.width = `${Math.round((blocked / target) * 100)}%`; };
+    render();
+
+    const finish = () => {
+      if (done) return;
+      done = true;
+      cancelAnimationFrame(raf);
+      gusts.forEach((g) => g.el.remove());
+      window.__windSolve = undefined;
+      sfx.fanfare?.();
+      setTimeout(() => { wrap.remove(); resolve(); }, 500);
+    };
+
+    const block = (g) => {
+      if (g.dead) return;
+      g.dead = true;
+      blocked++;
+      sfx.collect?.();
+      g.el.classList.add('blocked');
+      g.el.textContent = '✨';
+      setTimeout(() => g.el.remove(), 300);
+      gusts.delete(g);
+      render();
+      if (blocked >= target) finish();
+    };
+
+    const spawn = () => {
+      const el = document.createElement('button');
+      el.className = 'wb-gust';
+      el.textContent = '⚡';
+      const fw = field.clientWidth || 500;
+      const x = 30 + Math.random() * (fw - 60);
+      el.style.left = `${x}px`;
+      el.style.top = '-40px';
+      field.appendChild(el);
+      const g = { el, y: -40, x, speed: 90 + Math.random() * 60, dead: false };
+      el.onpointerdown = (e) => { e.preventDefault(); block(g); };
+      gusts.add(g);
+    };
+
+    const loop = (now) => {
+      const dt = Math.min((now - last) / 1000, 0.05); last = now;
+      spawnIn -= dt;
+      if (spawnIn <= 0 && gusts.size < 4) { spawn(); spawnIn = 0.55 + Math.random() * 0.5; }
+      const fh = field.clientHeight || 320;
+      for (const g of [...gusts]) {
+        g.y += g.speed * dt;
+        g.el.style.top = `${g.y}px`;
+        if (g.y > fh - 60 && !g.dead) {
+          // it got through: Mars flinches, no penalty — just keep blocking
+          g.dead = true;
+          gusts.delete(g);
+          g.el.remove();
+          sfx.bump?.();
+          mars.classList.remove('hit');
+          void mars.offsetWidth;   // restart the flinch animation
+          mars.classList.add('hit');
+        }
+      }
+      raf = requestAnimationFrame(loop);
+    };
+    raf = requestAnimationFrame(loop);
+
+    window.__windSolve = () => { blocked = target - 1; spawn(); const g = [...gusts][0]; block(g); };   // test hook
+  });
+}
+
 /** Drop a glowing beacon shard into the scene and have the hero collect it. */
 export async function beaconPickup(scene) {
   const beacon = makeBeacon();
